@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
@@ -37,6 +38,11 @@ const navItems = [
     icon: ClipboardList,
   },
   { to: "/cliente/eventos", label: "Corridas e Eventos", icon: Trophy },
+  {
+    to: "/cliente/inscricoes",
+    label: "Minhas Inscrições",
+    icon: ClipboardCheck,
+  },
   { to: "/cliente/atendimento", label: "Atendimento", icon: MessageSquare },
   { to: "/cliente/perfil", label: "Perfil", icon: User },
   { to: "/cliente/configuracoes", label: "Configurações", icon: Settings },

@@ -6,6 +6,8 @@ import {
   customOrders as initialCustomOrders,
   messages as initialMessages,
   suppliers as initialSuppliers,
+  events as initialEvents,
+  eventRegistrations as initialEventRegistrations,
 } from "../data/mockData";
 
 const AppContext = createContext(null);
@@ -17,6 +19,10 @@ export function AppProvider({ children }) {
   const [customOrders, setCustomOrders] = useState(initialCustomOrders);
   const [messages, setMessages] = useState(initialMessages);
   const [suppliers, setSuppliers] = useState(initialSuppliers);
+  const [events, setEvents] = useState(initialEvents);
+  const [eventRegistrations, setEventRegistrations] = useState(
+    initialEventRegistrations,
+  );
   const [cart, setCart] = useState([]);
   const [notifications, setNotifications] = useState([
     {
@@ -81,6 +87,10 @@ export function AppProvider({ children }) {
         setMessages,
         suppliers,
         setSuppliers,
+        events,
+        setEvents,
+        eventRegistrations,
+        setEventRegistrations,
         cart,
         addToCart,
         removeFromCart,

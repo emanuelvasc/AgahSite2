@@ -382,6 +382,46 @@ export const events = [
   },
 ];
 
+// ─── INSCRIÇÕES EM EVENTOS ─────────────────────────────────
+export const eventRegistrations = [
+  {
+    id: "INS-2025-001",
+    eventId: 1,
+    eventName: "Corrida das Montanhas BH",
+    clientId: 1,
+    clientName: "Rafael Mendonça",
+    distance: "10km",
+    shirtSize: "M",
+    date: "2025-01-10",
+    status: "Confirmada",
+    price: 120.0,
+  },
+  {
+    id: "INS-2025-002",
+    eventId: 2,
+    eventName: "Night Run Contagem",
+    clientId: 2,
+    clientName: "Equipe Vortex Running",
+    distance: "10km",
+    shirtSize: "G",
+    date: "2025-01-12",
+    status: "Confirmada",
+    price: 85.0,
+  },
+  {
+    id: "INS-2025-003",
+    eventId: 3,
+    eventName: "Maratona BH 2025",
+    clientId: 5,
+    clientName: "Clube Atlético BH",
+    distance: "21km",
+    shirtSize: "GG",
+    date: "2025-01-14",
+    status: "Pendente",
+    price: 180.0,
+  },
+];
+
 // ─── ENCOMENDAS ─────────────────────────────────────────────
 export const customOrders = [
   {
@@ -534,6 +574,12 @@ export const statusConfig = {
     color: "bg-amber-500/15 text-amber-400",
     dot: "bg-amber-400",
   },
+  Confirmada: {
+    color: "bg-emerald-500/15 text-emerald-400",
+    dot: "bg-emerald-400",
+  },
+  Lotado: { color: "bg-red-500/15 text-red-400", dot: "bg-red-400" },
+  Encerrado: { color: "bg-slate-500/15 text-slate-400", dot: "bg-slate-400" },
 };
 
 export const messages = [

@@ -17,6 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
+  Trophy,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
@@ -28,6 +30,8 @@ const navItems = [
   { to: "/admin/estoque", label: "Estoque", icon: Boxes },
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
   { to: "/admin/encomendas", label: "Encomendas", icon: ClipboardList },
+  { to: "/admin/eventos", label: "Corridas e Eventos", icon: Trophy },
+  { to: "/admin/inscricoes", label: "Inscrições", icon: ClipboardCheck },
   { to: "/admin/producao", label: "Produção", icon: Factory },
   { to: "/admin/fornecedores", label: "Fornecedores", icon: Truck },
   { to: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
