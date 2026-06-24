@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
+import logoAgah from "../../assets/logo-agah.jpg";
 
 const navItems = [
   { to: "/cliente", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -78,9 +79,11 @@ export default function ClientLayout({ children }) {
         {/* Logo */}
         <div className="flex items-center h-16 px-4 border-b border-white/6">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-8 h-8 gradient-brand rounded-lg flex-shrink-0 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">AG</span>
-            </div>
+            <img
+              src={logoAgah}
+              alt="AGAH Logo"
+              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+            />
             <AnimatePresence>
               {!collapsed && (
                 <motion.span

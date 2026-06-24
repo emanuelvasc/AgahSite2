@@ -18,8 +18,6 @@ export default function ClientRegistrations() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
 
-  // Demo: mostra as inscrições do cliente "Rafael Mendonça" (clientId: 1) já existentes,
-  // além de qualquer inscrição feita durante a sessão atual a partir de ClientEvents.
   const myRegistrations = eventRegistrations.filter(
     (r) => r.clientId === 1 || r.clientName === user?.name,
   );
@@ -91,13 +89,13 @@ export default function ClientRegistrations() {
               transition={{ delay: i * 0.06 }}
               className="glass rounded-2xl p-5 flex items-center gap-4 border border-white/6"
             >
-              <div className="w-12 h-12 rounded-xl bg-orange-500/15 flex items-center justify-center flex-shrink-0">
-                <Trophy size={20} className="text-orange-400" />
+              <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
+                <Trophy size={20} className="text-[#D4AF37]" />
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs font-bold text-orange-400">
+                  <span className="font-mono text-xs font-bold text-[#D4AF37]">
                     {reg.id}
                   </span>
                   <StatusBadge status={reg.status} />

@@ -159,7 +159,7 @@ export default function AdminEvents() {
           {
             label: "Total de Inscritos",
             value: events.reduce((a, e) => a + e.participants, 0),
-            color: "text-orange-400",
+            color: "text-[#D4AF37]",
           },
         ].map((s) => (
           <Card key={s.label} className="py-4">
@@ -206,8 +206,8 @@ export default function AdminEvents() {
               >
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-orange-500/15 flex items-center justify-center flex-shrink-0">
-                      <Trophy size={15} className="text-orange-400" />
+                    <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
+                      <Trophy size={15} className="text-[#D4AF37]" />
                     </div>
                     <span className="text-white font-medium text-sm">
                       {event.name}
@@ -248,7 +248,7 @@ export default function AdminEvents() {
                           background:
                             pct >= 85
                               ? "#f59e0b"
-                              : "linear-gradient(90deg,#f97316,#fb923c)",
+                              : "linear-gradient(90deg,#D4AF37,#e8c970)",
                         }}
                       />
                     </div>
@@ -443,7 +443,7 @@ export default function AdminEvents() {
               value={form.description}
               onChange={(e) => update("description", e.target.value)}
               placeholder="Descreva o evento: percurso, estrutura, diferenciais..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 resize-none focus:border-orange-500/50 transition-colors placeholder:text-slate-600"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 resize-none focus:border-[#D4AF37]/50 transition-colors placeholder:text-slate-600"
             />
           </div>
 

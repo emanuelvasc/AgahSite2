@@ -51,20 +51,36 @@ function ProductCard({ product, onClick }) {
       onClick={() => onClick(product)}
     >
       {/* Image */}
-      <div
-        className="h-44 relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)",
-        }}
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Package
-            size={48}
-            className="text-white/8 group-hover:text-white/12 transition-colors"
+      <div className="h-48 relative overflow-hidden bg-[#0a0a0a]">
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              e.target.style.display = "none";
+              e.target.parentElement.innerHTML = `
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <svg class="text-white/10" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                    <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                    <path d="M4 6h16"/>
+                    <path d="M4 10h10"/>
+                  </svg>
+                </div>
+              `;
+            }}
           />
-        </div>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Package
+              size={48}
+              className="text-white/8 group-hover:text-white/12 transition-colors"
+            />
+          </div>
+        )}
         {product.customizable && (
-          <div className="absolute top-3 left-3 text-[10px] bg-[#D4AF37]/25 text-[#D4AF37] border border-[#D4AF37]/30 px-2 py-1 rounded-full font-semibold uppercase backdrop-blur-sm">
+          <div className="absolute top-3 left-3 text-[10px] bg-[#D4AF37]/80 text-black px-2 py-1 rounded-full font-semibold uppercase backdrop-blur-sm">
             ✦ Custom
           </div>
         )}
@@ -169,15 +185,33 @@ function ProductDetailModal({ product, onClose }) {
 
         <div className="flex flex-col xl:flex-row">
           {/* Image */}
-          <div
-            className="xl:w-64 h-64 xl:h-auto flex-shrink-0 flex items-center justify-center relative"
-            style={{
-              background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)",
-            }}
-          >
-            <Package size={64} className="text-white/10" />
+          <div className="xl:w-80 h-80 xl:h-auto flex-shrink-0 flex items-center justify-center relative bg-[#0a0a0a]">
+            {product.image ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "";
+                  e.target.className =
+                    "w-full h-full flex items-center justify-center";
+                  e.target.parentElement.innerHTML = `
+                    <div class="w-full h-full flex items-center justify-center">
+                      <svg class="text-white/20" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                        <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                        <path d="M4 6h16"/>
+                        <path d="M4 10h10"/>
+                      </svg>
+                    </div>
+                  `;
+                }}
+              />
+            ) : (
+              <Package size={64} className="text-white/10" />
+            )}
             {product.customizable && (
-              <div className="absolute bottom-4 left-4 text-xs bg-[#D4AF37]/25 text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 rounded-full font-semibold">
+              <div className="absolute bottom-4 left-4 text-xs bg-[#D4AF37]/80 text-black px-3 py-1 rounded-full font-semibold">
                 ✦ Personalizável
               </div>
             )}

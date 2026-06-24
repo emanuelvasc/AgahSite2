@@ -124,19 +124,34 @@ export default function AdminProducts() {
               className="glass rounded-2xl overflow-hidden card-hover cursor-pointer"
               onClick={() => setSelected(product)}
             >
-              {/* Product Image Placeholder */}
-              <div
-                className="h-36 relative overflow-hidden"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)",
-                }}
-              >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Package size={40} className="text-white/10" />
-                </div>
+              {/* Product Image */}
+              <div className="h-48 relative overflow-hidden bg-[#0a0a0a]">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.parentElement.innerHTML = `
+                        <div class="absolute inset-0 flex items-center justify-center">
+                          <svg class="text-white/10" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                            <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                            <path d="M4 6h16"/>
+                            <path d="M4 10h10"/>
+                          </svg>
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Package size={48} className="text-white/10" />
+                  </div>
+                )}
                 <div className="absolute top-3 left-3">
-                  <span className="text-[10px] font-mono bg-white/10 text-slate-400 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-mono bg-black/70 text-slate-300 px-2 py-0.5 rounded-md">
                     {product.code}
                   </span>
                 </div>
@@ -144,7 +159,7 @@ export default function AdminProducts() {
                   <StatusBadge status={product.status} />
                 </div>
                 {product.customizable && (
-                  <div className="absolute bottom-3 right-3 text-[10px] bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/20 px-2 py-0.5 rounded-full font-semibold">
+                  <div className="absolute bottom-3 right-3 text-[10px] bg-[#D4AF37]/80 text-black px-2 py-0.5 rounded-full font-semibold">
                     Custom
                   </div>
                 )}
@@ -200,12 +215,30 @@ export default function AdminProducts() {
                 className="border-b border-white/5 hover:bg-white/3 transition-colors"
               >
                 <TableCell>
-                  <div>
-                    <div className="text-white font-medium text-sm">
-                      {p.name}
-                    </div>
-                    <div className="text-xs text-slate-500 font-mono">
-                      {p.code}
+                  <div className="flex items-center gap-3">
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                        onError={(e) => {
+                          e.target.src = "";
+                          e.target.className =
+                            "w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center">
+                        <Package size={20} className="text-white/20" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-white font-medium text-sm">
+                        {p.name}
+                      </div>
+                      <div className="text-xs text-slate-500 font-mono">
+                        {p.code}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -263,13 +296,33 @@ export default function AdminProducts() {
         {selected && (
           <div className="space-y-5">
             <div className="flex items-start gap-4">
-              <div
-                className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: "linear-gradient(135deg,#0a0a0a,#1a1a1a)",
-                }}
-              >
-                <Package size={32} className="text-white/20" />
+              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a]">
+                {selected.image ? (
+                  <img
+                    src={selected.image}
+                    alt={selected.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "";
+                      e.target.className =
+                        "w-full h-full flex items-center justify-center";
+                      e.target.parentElement.innerHTML = `
+                        <div class="w-full h-full flex items-center justify-center">
+                          <svg class="text-white/20" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                            <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                            <path d="M4 6h16"/>
+                            <path d="M4 10h10"/>
+                          </svg>
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package size={32} className="text-white/20" />
+                  </div>
+                )}
               </div>
               <div className="flex-1">
                 <div className="text-xs font-mono text-[#D4AF37] mb-1">
@@ -407,6 +460,11 @@ export default function AdminProducts() {
             <Input
               label="Tamanhos (sep. por vírgula)"
               placeholder="PP,P,M,G,GG"
+            />
+            <Input
+              label="URL da Imagem"
+              placeholder="https://exemplo.com/imagem.jpg"
+              className="col-span-2"
             />
           </div>
           <div className="flex gap-3 pt-2">

@@ -123,13 +123,31 @@ export default function ClientCart() {
                 className="glass rounded-2xl p-4 flex items-center gap-4"
               >
                 {/* Product image */}
-                <div
-                  className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)",
-                  }}
-                >
-                  <Package size={24} className="text-white/20" />
+                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a]">
+                  {item.product.image ? (
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML = `
+                          <div class="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
+                            <svg class="text-white/20" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                              <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                              <path d="M4 6h16"/>
+                              <path d="M4 10h10"/>
+                            </svg>
+                          </div>
+                        `;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
+                      <Package size={24} className="text-white/20" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">

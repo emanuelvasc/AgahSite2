@@ -84,7 +84,7 @@ export default function AdminEventRegistrations() {
           {
             label: "Receita de Inscrições",
             value: `R$ ${totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-            color: "text-orange-400",
+            color: "text-[#D4AF37]",
           },
         ].map((s) => (
           <Card key={s.label} className="py-4">
@@ -151,7 +151,7 @@ export default function AdminEventRegistrations() {
               onClick={() => setSelected(reg)}
             >
               <TableCell>
-                <span className="font-mono text-xs font-semibold text-orange-400">
+                <span className="font-mono text-xs font-semibold text-[#D4AF37]">
                   {reg.id}
                 </span>
               </TableCell>
@@ -218,7 +218,7 @@ export default function AdminEventRegistrations() {
         {selected && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-lg text-orange-400 font-bold">
+              <span className="font-mono text-lg text-[#D4AF37] font-bold">
                 {selected.id}
               </span>
               <StatusBadge status={selected.status} />

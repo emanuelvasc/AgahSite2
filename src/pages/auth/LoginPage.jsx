@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Zap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import logoAgah from "../../assets/logo-agah.jpg";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -82,9 +83,11 @@ export default function LoginPage() {
             Voltar ao site
           </Link>
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 gradient-brand rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AG</span>
-            </div>
+            <img
+              src={logoAgah}
+              alt="AGAH Logo"
+              className="w-10 h-10 rounded-xl object-cover"
+            />
             <span className="font-display font-bold text-2xl text-white">
               AGAH
             </span>
@@ -123,9 +126,11 @@ export default function LoginPage() {
         >
           <div className="mb-8">
             <div className="lg:hidden flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 gradient-brand rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">AG</span>
-              </div>
+              <img
+                src={logoAgah}
+                alt="AGAH Logo"
+                className="w-8 h-8 rounded-lg object-cover"
+              />
               <span className="font-display font-bold text-xl text-white">
                 AGAH
               </span>
