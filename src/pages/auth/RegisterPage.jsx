@@ -7,8 +7,10 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  Zap,
-  UserPlus,
+  User,
+  Phone,
+  CheckCircle,
+  AlertCircle,
   Trophy,
   Shirt,
   Sparkles,
@@ -16,43 +18,120 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import logoTextoAgah from "../../assets/agah-escrito.jpg";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function RegisterPage() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError("");
+  };
+
+  const validateForm = () => {
+    if (!form.name.trim()) {
+      setError("Por favor, informe seu nome completo.");
+      return false;
+    }
+    if (!form.email.trim()) {
+      setError("Por favor, informe seu e-mail.");
+      return false;
+    }
+    if (!form.email.includes("@") || !form.email.includes(".")) {
+      setError("Por favor, informe um e-mail válido.");
+      return false;
+    }
+    if (!form.phone.trim()) {
+      setError("Por favor, informe seu telefone.");
+      return false;
+    }
+    if (form.password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
+      return false;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("As senhas não coincidem.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!validateForm()) return;
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const result = login(email, password);
+    await new Promise((r) => setTimeout(r, 1500));
     setLoading(false);
-    if (result.success) {
-      navigate(result.role === "admin" ? "/admin" : "/cliente");
-    } else {
-      setError("E-mail ou senha inválidos. Tente as credenciais demo abaixo.");
-    }
+    setRegistered(true);
+
+    setTimeout(() => {
+      const result = login(form.email, form.password);
+      if (result.success) {
+        navigate(result.role === "admin" ? "/admin" : "/cliente");
+      } else {
+        navigate("/login");
+      }
+    }, 2000);
   };
 
-  const fillDemo = (role) => {
-    if (role === "admin") {
-      setEmail("admin@agah.com");
-      setPassword("admin123");
-    } else {
-      setEmail("cliente@agah.com");
-      setPassword("cliente123");
-    }
+  const fillDemo = () => {
+    setForm({
+      name: "Cliente Demo",
+      email: "cliente@agah.com",
+      phone: "(31) 99999-9999",
+      password: "cliente123",
+      confirmPassword: "cliente123",
+    });
     setError("");
   };
 
+  if (registered) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#000000" }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-md p-8"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center mx-auto mb-6"
+          >
+            <CheckCircle size={40} className="text-emerald-400" />
+          </motion.div>
+          <h2 className="text-2xl font-bold font-display text-white mb-3">
+            Cadastro Realizado!
+          </h2>
+          <p className="text-slate-400 text-sm mb-6">
+            Sua conta foi criada com sucesso. Redirecionando...
+          </p>
+          <div className="w-12 h-12 border-4 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin mx-auto" />
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex" style={{ background: "#000000" }}>
-      {/* Left Panel */}
       <div
         className="hidden lg:flex flex-col justify-between w-[480px] p-12 relative overflow-hidden"
         style={{
@@ -128,7 +207,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel */}
       <div className="flex-1 flex items-center justify-center p-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -144,14 +222,35 @@ export default function LoginPage() {
               />
             </div>
             <h1 className="text-2xl font-bold font-display text-white mb-2 text-center">
-              Bem-vindo de volta
+              Criar Conta
             </h1>
             <p className="text-slate-500 text-sm text-center">
-              Entre na sua conta para continuar
+              Cadastre-se para começar a usar a plataforma
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Nome completo
+              </label>
+              <div className="relative">
+                <User
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                />
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Seu nome completo"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors pl-9 pr-4 py-3"
+                  required
+                />
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                 E-mail
@@ -163,9 +262,31 @@ export default function LoginPage() {
                 />
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
                   placeholder="seu@email.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors pl-9 pr-4 py-3"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Telefone
+              </label>
+              <div className="relative">
+                <Phone
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="(00) 00000-0000"
                   className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors pl-9 pr-4 py-3"
                   required
                 />
@@ -183,9 +304,10 @@ export default function LoginPage() {
                 />
                 <input
                   type={showPass ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Mínimo 6 caracteres"
                   className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors pl-9 pr-10 py-3"
                   required
                 />
@@ -199,13 +321,42 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Confirmar Senha
+              </label>
+              <div className="relative">
+                <Lock
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                />
+                <input
+                  type={showConfirmPass ? "text" : "password"}
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Digite a senha novamente"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors pl-9 pr-10 py-3"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPass(!showConfirmPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                >
+                  {showConfirmPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
               >
-                {error}
+                <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </motion.div>
             )}
 
@@ -217,56 +368,33 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{" "}
-                  Entrando...
+                  Criando conta...
                 </>
               ) : (
-                "Entrar"
+                "Criar Conta"
               )}
             </button>
           </form>
 
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <p className="text-sm text-slate-500">
-              Não tem uma conta?{" "}
+              Já tem uma conta?{" "}
               <Link
-                to="/registrar"
-                className="text-[#D4AF37] hover:text-[#e8c970] transition-colors font-semibold inline-flex items-center gap-1"
+                to="/login"
+                className="text-[#D4AF37] hover:text-[#e8c970] transition-colors font-semibold"
               >
-                <UserPlus size={14} />
-                Criar conta
+                Faça login
               </Link>
             </p>
           </div>
 
           <div className="mt-6 p-4 rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/5">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap size={14} className="text-[#D4AF37]" />
-              <span className="text-xs font-semibold text-[#D4AF37] uppercase tracking-wider">
-                Acesso Demo
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => fillDemo("admin")}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/8 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/8 transition-all text-left"
-              >
-                <div className="text-xs font-semibold text-white mb-1">
-                  Administrador
-                </div>
-                <div className="text-[11px] text-slate-500">admin@agah.com</div>
-              </button>
-              <button
-                onClick={() => fillDemo("client")}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/8 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/8 transition-all text-left"
-              >
-                <div className="text-xs font-semibold text-white mb-1">
-                  Cliente
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  cliente@agah.com
-                </div>
-              </button>
-            </div>
+            <button
+              onClick={fillDemo}
+              className="w-full text-center text-xs text-[#D4AF37] hover:text-[#e8c970] transition-colors font-medium"
+            >
+              ⚡ Preencher com dados demo
+            </button>
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-600">

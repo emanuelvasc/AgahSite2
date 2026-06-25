@@ -1,340 +1,482 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  ShoppingBag,
-  ClipboardList,
-  Trophy,
   ArrowRight,
   Package,
   Star,
+  ShoppingBag,
+  ClipboardList,
+  Trophy,
   Zap,
+  Bike,
+  Shirt,
+  Users,
+  Award,
   Clock,
+  Shield,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { StatusBadge, Card } from "../../components/ui";
-import { useApp } from "../../context/AppContext";
+import { Button, Card } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
-import { events } from "../../data/mockData";
+import { products } from "../../data/mockData";
 
-const quickActions = [
+// Imagens do carrossel
+import slide1 from "../../assets/slide1-agah.jpg";
+import slide2 from "../../assets/slide2-night-run.jpg";
+import slide3 from "../../assets/slide3-agah-creative.jpg";
+
+// Slides
+const slides = [
   {
-    to: "/cliente/produtos",
-    icon: Package,
-    label: "Ver Produtos",
-    color: "from-[#D4AF37]/20 to-[#b08526]/10",
-    border: "border-[#D4AF37]/20",
+    id: 1,
+    image: slide3,
+    title: "Performance que veste sua marca",
+    subtitle: "Uniformes personalizados para equipes e academias",
+    badge: "Confecção Esportiva Premium",
+    buttonText: "Fazer Orçamento",
+    buttonLink: "/cliente/encomendas",
+    button2Text: "Solicitar Orçamento",
+    button2Link: "/cliente/encomendas",
+    imagePosition: "center 50%",
   },
   {
-    to: "/cliente/encomendas",
-    icon: ClipboardList,
-    label: "Nova Encomenda",
-    color: "from-violet-500/20 to-violet-600/10",
-    border: "border-violet-500/20",
+    id: 2,
+    image: slide2,
+    title: "Tecnologia que <br /><span class='text-[#BA9730]'>move você</span>",
+    subtitle: "Roupas técnicas com alta performance e conforto",
+    badge: "Nova Coleção 2026",
+    buttonText: "Fazer Orçamento",
+    buttonLink: "/cliente/encomendas",
+    button2Text: "Saiba Mais",
+    button2Link: "/cliente/sobre",
+    imagePosition: "center 40%",
   },
   {
-    to: "/cliente/eventos",
-    icon: Trophy,
-    label: "Corridas & Eventos",
+    id: 3,
+    image: slide1,
+    title: "Sua marca, <br /><span class='text-[#BA9730]'>nosso tecido</span>",
+    subtitle: "Personalização total com qualidade premium",
+    badge: "100% Personalizável",
+    buttonText: "Fazer Orçamento",
+    buttonLink: "/cliente/encomendas",
+    button2Text: "Nova Encomenda",
+    button2Link: "/cliente/encomendas",
+    imagePosition: "center 40%",
+  },
+];
+
+// Categorias de produtos com imagens
+const productCategories = [
+  {
+    id: "ciclismo-uniforme",
+    name: "Uniformes de Ciclismo",
+    description:
+      "Uniformes completos com tecnologia avançada para máximo conforto e performance.",
+    icon: Bike,
+    products: products.filter(
+      (p) => p.name.includes("Ciclismo") || p.name.includes("Kit Ciclismo"),
+    ),
+    color: "from-[#BA9730]/20 to-[#8a6e20]/10",
+    border: "border-[#BA9730]/20",
+    image:
+      "https://i.pinimg.com/736x/79/ae/0b/79ae0bc5b9f517fdc93eb53ab62d457c.jpg",
+  },
+  {
+    id: "kits-ciclismo",
+    name: "Kits de Ciclismo",
+    description:
+      "Kits completos com camisa, bermuda e acessórios para ciclistas.",
+    icon: Bike,
+    products: products.filter((p) => p.name.includes("Kit Ciclismo")),
     color: "from-blue-500/20 to-blue-600/10",
     border: "border-blue-500/20",
+    image:
+      "https://lojavelor.com/cdn/shop/files/S010d78bb5191430ab627580d63775c7eh_7a3b6cdc-59a1-4cf2-8dae-b1196eb938a4.webp?v=1774550662&width=1024",
   },
   {
-    to: "/cliente/atendimento",
-    icon: Zap,
-    label: "Atendimento",
+    id: "camisas-ciclismo",
+    name: "Camisas de Ciclismo",
+    description:
+      "Camisas técnicas com tecidos leves e respiráveis para longas pedaladas.",
+    icon: Shirt,
+    products: products.filter((p) => p.name.includes("Camisa Ciclismo")),
     color: "from-emerald-500/20 to-emerald-600/10",
     border: "border-emerald-500/20",
+    image:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYywwrWBCtGO2BQd5bqI8oPKsf2eO_hYwk_lU2-Te6IzfBf_QzPyekdy69&s=10",
+  },
+  {
+    id: "macaquinhos",
+    name: "Macaquinhos de Ciclismo",
+    description:
+      "Macaquinhos aerodinâmicos com tecnologia de compressão e conforto.",
+    icon: Users,
+    products: products.filter((p) => p.name.includes("Macaquinho")),
+    color: "from-violet-500/20 to-violet-600/10",
+    border: "border-violet-500/20",
+    image:
+      "https://cdn.awsli.com.br/310x374/1896/1896433/produto/338706403/5713f4d4b41372f750ed848deffed396-fhxziepmui.jpg",
+  },
+  {
+    id: "uniformes-futebol",
+    name: "Uniformes de Futebol",
+    description:
+      "Uniformes completos para times e academias, com personalização total.",
+    icon: Trophy,
+    products: products.filter(
+      (p) =>
+        p.category === "Uniformes" &&
+        !p.name.includes("Ciclismo") &&
+        !p.name.includes("Macaquinho"),
+    ),
+    color: "from-red-500/20 to-red-600/10",
+    border: "border-red-500/20",
+    image: "https://cf.shopee.com.br/file/bc720e4937ccb88b87dc84bd441089dd",
+  },
+  {
+    id: "camisas-esportivas",
+    name: "Camisas Esportivas",
+    description:
+      "Camisas para corrida, academia e atividades esportivas em geral.",
+    icon: Shirt,
+    products: products.filter(
+      (p) =>
+        p.category === "Camisas" &&
+        !p.name.includes("Ciclismo") &&
+        !p.name.includes("Estampada"),
+    ),
+    color: "from-amber-500/20 to-amber-600/10",
+    border: "border-amber-500/20",
+    image: "https://imgs.extra.com.br/1509415692/1xg.jpg?imwidth=1000",
+  },
+  {
+    id: "outros",
+    name: "Outros Produtos",
+    description: "Acessórios e outros produtos esportivos da AGAH.",
+    icon: Package,
+    products: products.filter(
+      (p) =>
+        p.category === "Acessórios" ||
+        p.name.includes("Boné") ||
+        p.name.includes("Estampada"),
+    ),
+    color: "from-slate-500/20 to-slate-600/10",
+    border: "border-slate-500/20",
+    image:
+      "https://http2.mlstatic.com/D_NQ_NP_648468-MLB89966786801_082025-O-conjunto-varios-roupa-bike-kit-ciclismo-camisa-e-short-pro.webp",
   },
 ];
 
-const clientOrders = [
-  {
-    id: "PED-2025-001",
-    items: 3,
-    total: 289.7,
-    status: "Entregue",
-    date: "10/01/2025",
-  },
-  {
-    id: "PED-2025-005",
-    items: 2,
-    total: 199.8,
-    status: "Enviado",
-    date: "16/01/2025",
-  },
-];
+// Filtra categorias que têm produtos
+const availableCategories = productCategories.filter(
+  (cat) => cat.products.length > 0,
+);
 
 export default function ClientDashboard() {
   const { user } = useAuth();
-  const { cartCount } = useApp();
   const firstName = user?.name?.split(" ")[0] || "Cliente";
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const featuredProducts = products.slice(0, 4);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+  };
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
 
   return (
     <div>
-      {/* Hero Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-3xl overflow-hidden mb-8 min-h-[200px] flex items-end"
-        style={{
-          background:
-            "linear-gradient(135deg, #0a0a0a 0%, #1a0f40 50%, #0a0a0a 100%)",
-        }}
-      >
-        {/* Decorative elements - usando dourado */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div
-            className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-30"
-            style={{
-              background:
-                "radial-gradient(circle, #D4AF37 0%, transparent 65%)",
-            }}
-          />
-          <div
-            className="absolute top-1/2 right-32 w-48 h-48 rounded-full opacity-15"
-            style={{
-              background:
-                "radial-gradient(circle, #8b5cf6 0%, transparent 65%)",
-            }}
-          />
-          <div
-            className="absolute bottom-0 left-0 right-0 h-32 opacity-20"
-            style={{
-              background: "linear-gradient(180deg, transparent, #D4AF37)",
-            }}
-          />
-          {/* geometric lines */}
-          <svg
-            className="absolute inset-0 w-full h-full opacity-5"
-            viewBox="0 0 800 200"
-          >
-            <line
-              x1="0"
-              y1="100"
-              x2="800"
-              y2="100"
-              stroke="#D4AF37"
-              strokeWidth="0.5"
-            />
-            <line
-              x1="400"
-              y1="0"
-              x2="400"
-              y2="200"
-              stroke="#D4AF37"
-              strokeWidth="0.5"
-            />
-            <circle
-              cx="400"
-              cy="100"
-              r="80"
-              fill="none"
-              stroke="#D4AF37"
-              strokeWidth="0.5"
-            />
-            <circle
-              cx="400"
-              cy="100"
-              r="40"
-              fill="none"
-              stroke="#D4AF37"
-              strokeWidth="0.5"
-            />
-          </svg>
-        </div>
-
-        <div className="relative p-8 z-10 flex items-end justify-between w-full">
-          <div>
-            <div className="text-xs text-[#D4AF37] font-semibold uppercase tracking-widest mb-2">
-              Olá, {firstName} 👋
-            </div>
-            <h1 className="text-3xl font-bold font-display text-white mb-2">
-              Bem-vindo de volta
-            </h1>
-            <p className="text-slate-400 text-sm max-w-md">
-              Confira seus pedidos, faça novas encomendas e fique por dentro dos
-              eventos esportivos.
-            </p>
-            <div className="flex gap-3 mt-5">
-              <Link
-                to="/cliente/produtos"
-                className="inline-flex items-center gap-2 gradient-brand text-white text-sm font-semibold px-5 py-2.5 rounded-xl glow-brand-sm hover:opacity-90 transition-all"
-              >
-                Explorar Produtos <ArrowRight size={15} />
-              </Link>
-              <Link
-                to="/cliente/encomendas"
-                className="inline-flex items-center gap-2 glass-light text-white text-sm font-medium px-5 py-2.5 rounded-xl border border-white/15 hover:border-white/25 transition-all"
-              >
-                Nova Encomenda
-              </Link>
-            </div>
-          </div>
-
-          {/* Stats right side */}
-          <div className="hidden xl:flex gap-4">
-            {[
-              { label: "Pedidos", value: "8", icon: ShoppingBag },
-              { label: "Encomendas", value: "2", icon: ClipboardList },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="glass rounded-2xl px-5 py-4 text-center border border-white/8"
-              >
-                <s.icon size={20} className="text-[#D4AF37] mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white font-display">
-                  {s.value}
-                </div>
-                <div className="text-xs text-slate-500 mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-8">
-        {quickActions.map(({ to, icon: Icon, label, color, border }, i) => (
+      {/* Hero Banner - Carrossel */}
+      <div className="relative rounded-3xl overflow-hidden mb-8 min-h-[400px]">
+        <AnimatePresence mode="wait">
           <motion.div
-            key={to}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
+            key={currentSlide}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+            className="absolute inset-0"
           >
-            <Link
-              to={to}
-              className={`flex flex-col items-center gap-3 p-5 rounded-2xl bg-gradient-to-br ${color} border ${border} card-hover text-center transition-all group`}
-            >
-              <Icon
-                size={24}
-                className="text-white group-hover:scale-110 transition-transform"
-              />
-              <span className="text-sm font-medium text-white">{label}</span>
-            </Link>
+            <img
+              src={slides[currentSlide].image}
+              alt="AGAH Sportswear"
+              className="w-full h-full object-cover"
+              style={{
+                objectPosition:
+                  slides[currentSlide].imagePosition || "center 40%",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </motion.div>
-        ))}
-      </div>
+        </AnimatePresence>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Recent Orders */}
-        <div className="xl:col-span-2 glass rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-semibold font-display text-white">
-              Meus Pedidos Recentes
-            </h2>
-            <Link
-              to="/cliente/pedidos"
-              className="text-xs text-[#D4AF37] hover:text-[#e8c970] transition-colors flex items-center gap-1"
+        <div className="relative p-8 z-10 w-full min-h-[400px] flex items-center">
+          <div className="max-w-2xl">
+            <motion.div
+              key={currentSlide + "-content"}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Ver todos <ArrowRight size={12} />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {clientOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center gap-4 p-4 glass-light rounded-xl border border-white/6 hover:border-white/12 transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
-                  <ShoppingBag size={18} className="text-[#D4AF37]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-mono text-xs text-[#D4AF37] font-semibold">
-                      {order.id}
-                    </span>
-                    <StatusBadge status={order.status} />
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {order.items} item{order.items > 1 ? "s" : ""} •{" "}
-                    {order.date}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-white text-sm">
-                    R${" "}
-                    {order.total.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                    })}
-                  </div>
-                  <Link
-                    to="/cliente/pedidos"
-                    className="text-[10px] text-[#D4AF37] hover:text-[#e8c970]"
-                  >
-                    Detalhes →
-                  </Link>
-                </div>
+              <div className="text-xs text-[#BA9730] font-semibold uppercase tracking-widest mb-2 flex items-center gap-2">
+                <span className="w-8 h-0.5 bg-[#BA9730]" />
+                {slides[currentSlide].badge}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Upcoming event */}
-        <div className="space-y-4">
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold font-display text-white">
-                Próximo Evento
-              </h2>
-              <Trophy size={16} className="text-[#D4AF37]" />
-            </div>
-            <div className="p-4 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/5">
-              <div className="text-xs text-[#D4AF37] font-semibold mb-2 uppercase tracking-wider">
-                22 FEV
-              </div>
-              <div className="font-semibold text-white mb-1">
-                {events[1].name}
-              </div>
-              <div className="text-xs text-slate-500 mb-3">
-                {events[1].location}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400">
-                  {events[1].distance}
-                </span>
+              <h1
+                className="text-3xl md:text-5xl font-bold font-display text-white leading-tight mb-3"
+                dangerouslySetInnerHTML={{ __html: slides[currentSlide].title }}
+              />
+              <p className="text-slate-300 text-sm md:text-base max-w-lg mb-5">
+                {slides[currentSlide].subtitle}
+              </p>
+              <div className="flex flex-wrap gap-3">
                 <Link
-                  to="/cliente/eventos"
-                  className="text-xs text-[#D4AF37] font-semibold hover:text-[#e8c970] flex items-center gap-1"
+                  to={slides[currentSlide].buttonLink}
+                  className="inline-flex items-center gap-2 bg-[#BA9730] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-[#BA9730]/25"
                 >
-                  Inscrever-se <ArrowRight size={10} />
+                  {slides[currentSlide].buttonText} <ArrowRight size={15} />
+                </Link>
+                <Link
+                  to={slides[currentSlide].button2Link}
+                  className="inline-flex items-center gap-2 glass-light text-white text-sm font-medium px-6 py-3 rounded-xl border border-white/15 hover:border-[#BA9730]/50 transition-all backdrop-blur-sm"
+                >
+                  {slides[currentSlide].button2Text}
                 </Link>
               </div>
-            </div>
-            <Link
-              to="/cliente/eventos"
-              className="mt-3 flex items-center justify-center gap-2 text-xs text-slate-500 hover:text-white transition-colors py-2"
-            >
-              Ver todos os eventos <ArrowRight size={11} />
-            </Link>
-          </Card>
+            </motion.div>
+          </div>
+        </div>
 
-          <Card>
-            <div className="flex items-center gap-2 mb-4">
-              <Star size={16} className="text-[#D4AF37]" />
-              <h2 className="font-semibold font-display text-white">
-                Produtos em Destaque
-              </h2>
-            </div>
-            <div className="space-y-3">
-              {[
-                { name: "Camisa Manga Curta", price: 89.9 },
-                { name: "Regata Esportiva Elite", price: 69.9 },
-                { name: "Shorts Esportivo Pro", price: 79.9 },
-              ].map((p) => (
-                <div key={p.name} className="flex items-center justify-between">
-                  <span className="text-sm text-slate-300">{p.name}</span>
-                  <span className="text-sm font-semibold text-[#D4AF37]">
-                    R$ {p.price.toFixed(2).replace(".", ",")}
-                  </span>
+        <button
+          onClick={prevSlide}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full glass-light hover:bg-white/20 transition-colors text-white/70 hover:text-white border border-white/10"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <button
+          onClick={nextSlide}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full glass-light hover:bg-white/20 transition-colors text-white/70 hover:text-white border border-white/10"
+        >
+          <ChevronRight size={20} />
+        </button>
+
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                currentSlide === index
+                  ? "w-8 bg-[#BA9730]"
+                  : "bg-white/30 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Categorias de Produtos - BOTÕES ALTERADOS PARA "Fazer Orçamento" */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold font-display text-white">
+              Nossos Produtos
+            </h2>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Confira nossa linha completa de produtos esportivos
+            </p>
+          </div>
+          <Link
+            to="/cliente/encomendas"
+            className="text-sm text-[#BA9730] hover:text-[#d4a840] transition-colors flex items-center gap-1"
+          >
+            Fazer Orçamento <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {availableCategories.map((category, i) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="glass rounded-2xl overflow-hidden card-hover group"
+            >
+              <Link to="/cliente/encomendas" className="block">
+                <div className="h-48 relative overflow-hidden bg-[#0a0a0a]">
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML = `
+                          <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="text-white/10" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                              <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                              <path d="M4 6h16"/>
+                              <path d="M4 10h10"/>
+                            </svg>
+                          </div>
+                          <div class="absolute bottom-2 right-2 text-[8px] bg-black/70 text-white px-2 py-0.5 rounded-full">
+                            Imagem indisponível
+                          </div>
+                        `;
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <category.icon
+                        size={48}
+                        className="text-white/10 group-hover:text-white/20 transition-colors"
+                      />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3 text-[10px] bg-black/70 text-white px-2 py-0.5 rounded-full">
+                    {category.products.length} produtos
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-white text-sm mb-1">
+                    {category.name}
+                  </h3>
+                  <p className="text-xs text-slate-400 line-clamp-2">
+                    {category.description}
+                  </p>
+                  <div className="mt-3 flex items-center gap-1 text-xs text-[#BA9730] font-medium">
+                    Fazer Orçamento <ArrowRight size={12} />
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Produtos em Destaque */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold font-display text-white flex items-center gap-2">
+              <Star size={18} className="text-[#BA9730] fill-[#BA9730]" />
+              Destaques
+            </h2>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Os produtos mais procurados da AGAH
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {featuredProducts.map((product, i) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="glass rounded-2xl overflow-hidden card-hover group"
+            >
+              <Link to="/cliente/produtos" className="block">
+                <div className="h-32 relative overflow-hidden bg-[#0a0a0a]">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Package
+                        size={32}
+                        className="text-white/10 group-hover:text-white/15 transition-colors"
+                      />
+                    </div>
+                  )}
+                  {product.customizable && (
+                    <div className="absolute top-2 left-2 text-[8px] bg-[#BA9730] text-black px-2 py-0.5 rounded-full font-semibold uppercase">
+                      Custom
+                    </div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="text-[8px] text-slate-500 uppercase tracking-wider mb-0.5">
+                    {product.category}
+                  </div>
+                  <h3 className="text-xs font-semibold text-white leading-tight line-clamp-2">
+                    {product.name}
+                  </h3>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-sm font-bold text-[#BA9730]">
+                      R$ {product.price.toFixed(2).replace(".", ",")}
+                    </span>
+                    <span className="text-[8px] text-slate-500">
+                      {product.stock} un.
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA Final */}
+      <div className="relative rounded-3xl overflow-hidden p-8 text-center">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, #0a0a0a 0%, #1a0f40 50%, #0a0a0a 100%)",
+          }}
+        />
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 800 300">
+            <circle cx="700" cy="50" r="150" fill="#BA9730" />
+            <circle cx="100" cy="250" r="100" fill="#BA9730" />
+          </svg>
+        </div>
+        <div className="relative z-10">
+          <h2 className="text-2xl md:text-3xl font-bold font-display text-white mb-3">
+            Pronto para vestir sua equipe?
+          </h2>
+          <p className="text-slate-400 text-sm max-w-lg mx-auto mb-6">
+            Solicite um orçamento personalizado e descubra como a AGAH pode
+            transformar a identidade visual do seu time.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link
+              to="/cliente/encomendas"
+              className="inline-flex items-center gap-2 bg-[#BA9730] text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-[#BA9730]/25"
+            >
+              Solicitar Orçamento <ArrowRight size={16} />
+            </Link>
             <Link
               to="/cliente/produtos"
-              className="mt-4 flex items-center justify-center gap-2 text-xs gradient-brand text-white px-4 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
+              className="inline-flex items-center gap-2 glass-light text-white font-medium px-6 py-3 rounded-xl border border-white/15 hover:border-[#BA9730]/50 transition-all"
             >
-              Ver Catálogo <ArrowRight size={12} />
+              Ver Catálogo Completo
             </Link>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

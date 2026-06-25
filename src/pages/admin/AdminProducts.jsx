@@ -124,13 +124,13 @@ export default function AdminProducts() {
               className="glass rounded-2xl overflow-hidden card-hover cursor-pointer"
               onClick={() => setSelected(product)}
             >
-              {/* Product Image */}
-              <div className="h-48 relative overflow-hidden bg-[#0a0a0a]">
+              {/* ✅ IMAGEM CORRIGIDA: object-contain + flex + padding */}
+              <div className="h-48 relative overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-2">
                 {product.image ? (
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       e.target.style.display = "none";
                       e.target.parentElement.innerHTML = `
@@ -216,22 +216,33 @@ export default function AdminProducts() {
               >
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {p.image ? (
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="w-12 h-12 rounded-lg object-cover"
-                        onError={(e) => {
-                          e.target.src = "";
-                          e.target.className =
-                            "w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center">
-                        <Package size={20} className="text-white/20" />
-                      </div>
-                    )}
+                    {/* ✅ IMAGEM CORRIGIDA: object-contain + flex + padding na lista */}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-1 flex-shrink-0">
+                      {p.image ? (
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = `
+                              <div class="w-full h-full flex items-center justify-center">
+                                <svg class="text-white/20" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                                  <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                                  <path d="M4 6h16"/>
+                                  <path d="M4 10h10"/>
+                                </svg>
+                              </div>
+                            `;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package size={20} className="text-white/20" />
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <div className="text-white font-medium text-sm">
                         {p.name}
@@ -296,16 +307,15 @@ export default function AdminProducts() {
         {selected && (
           <div className="space-y-5">
             <div className="flex items-start gap-4">
-              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a]">
+              {/* ✅ IMAGEM CORRIGIDA: object-contain + flex + padding no modal */}
+              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a] flex items-center justify-center p-2">
                 {selected.image ? (
                   <img
                     src={selected.image}
                     alt={selected.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
-                      e.target.src = "";
-                      e.target.className =
-                        "w-full h-full flex items-center justify-center";
+                      e.target.style.display = "none";
                       e.target.parentElement.innerHTML = `
                         <div class="w-full h-full flex items-center justify-center">
                           <svg class="text-white/20" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

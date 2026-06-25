@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
+  Home,
   Package,
   ShoppingCart,
   ShoppingBag,
@@ -21,10 +22,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import logoAgah from "../../assets/logo-agah.jpg";
+import logoTextoAgah from "../../assets/agah-escrito.jpg";
 
 const navItems = [
-  { to: "/cliente", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/cliente", label: "Início", icon: Home, end: true },
   { to: "/cliente/produtos", label: "Produtos", icon: Package },
   {
     to: "/cliente/carrinho",
@@ -49,6 +50,13 @@ const navItems = [
   { to: "/cliente/configuracoes", label: "Configurações", icon: Settings },
   { to: "/cliente/sobre", label: "Sobre", icon: Info },
   { to: "/cliente/contato", label: "Contato", icon: Phone },
+];
+
+const topNavLinks = [
+  { label: "Início", href: "/cliente" },
+  { label: "Produtos", href: "/cliente/produtos" },
+  { label: "Eventos", href: "/cliente/eventos" },
+  { label: "Contato", href: "/cliente/atendimento" },
 ];
 
 export default function ClientLayout({ children }) {
@@ -76,27 +84,38 @@ export default function ClientLayout({ children }) {
           borderRight: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        {/* Logo */}
         <div className="flex items-center h-16 px-4 border-b border-white/6">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <img
-              src={logoAgah}
-              alt="AGAH Logo"
-              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-            />
+          <Link to="/cliente" className="flex items-center overflow-hidden">
             <AnimatePresence>
-              {!collapsed && (
-                <motion.span
+              {!collapsed ? (
+                <motion.div
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
-                  className="font-display font-bold text-white text-lg whitespace-nowrap overflow-hidden"
+                  className="flex-shrink-0 flex items-center"
                 >
-                  AGAH
-                </motion.span>
+                  <img
+                    src={logoTextoAgah}
+                    alt="AGAH"
+                    className="h-7 w-auto object-contain"
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="flex-shrink-0 flex items-center"
+                >
+                  <img
+                    src={logoTextoAgah}
+                    alt="AGAH"
+                    className="h-5 w-auto object-contain"
+                  />
+                </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </Link>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="ml-auto p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
@@ -166,24 +185,29 @@ export default function ClientLayout({ children }) {
 
         <div className="p-3 border-t border-white/6">
           <div className="flex items-center gap-3 px-1 mb-2">
-            <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {user?.avatar}
-            </div>
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex-1 overflow-hidden min-w-0"
-                >
-                  <div className="text-sm font-medium text-white truncate">
-                    {user?.name}
-                  </div>
-                  <div className="text-xs text-slate-500">Cliente</div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <Link
+              to="/cliente/configuracoes"
+              className="flex items-center gap-3 flex-1 min-w-0 hover:bg-white/5 rounded-xl p-1 transition-colors"
+            >
+              <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {user?.avatar}
+              </div>
+              <AnimatePresence>
+                {!collapsed && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 overflow-hidden min-w-0"
+                  >
+                    <div className="text-sm font-medium text-white truncate">
+                      {user?.name}
+                    </div>
+                    <div className="text-xs text-slate-500">Cliente</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Link>
           </div>
           <button
             onClick={handleLogout}
@@ -200,10 +224,30 @@ export default function ClientLayout({ children }) {
           className="h-16 flex items-center justify-between px-6 border-b border-white/6 flex-shrink-0"
           style={{ background: "#0a0a0a" }}
         >
-          <div className="text-sm text-slate-500">
-            <span className="text-[#D4AF37]">AGAH</span>{" "}
-            <span className="text-slate-600">/</span> Cliente
-          </div>
+          <Link
+            to="/cliente"
+            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+          >
+            <img
+              src={logoTextoAgah}
+              alt="AGAH"
+              className="h-4 w-auto object-contain"
+            />
+            <span className="text-slate-600 text-sm">/ Cliente</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8">
+            {topNavLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.href}
+                className="text-sm text-slate-300 hover:text-white transition-colors font-medium"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
               <Bell size={18} />
@@ -219,9 +263,12 @@ export default function ClientLayout({ children }) {
                 </span>
               )}
             </NavLink>
-            <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold">
+            <Link
+              to="/cliente/configuracoes"
+              className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity cursor-pointer"
+            >
               {user?.avatar}
-            </div>
+            </Link>
           </div>
         </header>
 

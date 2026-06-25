@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
-import logoAgah from "../../assets/logo-agah.jpg";
+import logoTextoAgah from "../../assets/agah-escrito.jpg";
 
 const NAV_LINKS = [
   { label: "Início", href: "#home" },
@@ -26,15 +26,12 @@ export default function LandingNav() {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "glass border-b border-white/8" : "bg-transparent"}`}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="#home" className="flex items-center gap-3">
+        <a href="#home" className="flex items-center">
           <img
-            src={logoAgah}
-            alt="AGAH Logo"
-            className="w-12 h-12 rounded-xl object-cover"
+            src={logoTextoAgah}
+            alt="AGAH"
+            className="h-8 w-auto object-contain"
           />
-          <span className="font-display font-bold text-xl text-white">
-            AGAH
-          </span>
         </a>
 
         <nav className="hidden xl:flex items-center gap-8">
@@ -57,10 +54,10 @@ export default function LandingNav() {
             Entrar
           </button>
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/registrar")}
             className="inline-flex items-center gap-2 gradient-brand text-white text-sm font-semibold px-5 py-2.5 rounded-xl glow-brand-sm hover:opacity-90 transition-all"
           >
-            Área do Cliente <ArrowRight size={14} />
+            Cadastrar <ArrowRight size={14} />
           </button>
         </div>
 
@@ -95,7 +92,13 @@ export default function LandingNav() {
                 onClick={() => navigate("/login")}
                 className="mt-2 gradient-brand text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
               >
-                Entrar / Área do Cliente
+                Entrar
+              </button>
+              <button
+                onClick={() => navigate("/registrar")}
+                className="gradient-brand text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
+              >
+                Cadastrar
               </button>
             </div>
           </motion.div>

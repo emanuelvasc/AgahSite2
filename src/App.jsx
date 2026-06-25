@@ -7,6 +7,7 @@ import ClientLayout from "./components/layout/ClientLayout";
 
 import LandingPage from "./pages/landing/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage"; // ← ADICIONADO
 import NotFoundPage from "./pages/NotFoundPage";
 
 // Admin pages
@@ -49,7 +50,8 @@ function App() {
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
-
+            <Route path="/registrar" element={<RegisterPage />} />{" "}
+            {/* ← ADICIONADO */}
             {/* Admin area */}
             <Route
               path="/admin"
@@ -181,7 +183,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
             {/* Client area */}
             <Route
               path="/cliente"
@@ -303,7 +304,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

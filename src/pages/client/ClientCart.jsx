@@ -10,9 +10,414 @@ import {
   ArrowRight,
   Tag,
   Check,
+  CreditCard,
+  Smartphone,
+  Lock,
+  Shield,
+  X,
+  Copy,
+  QrCode,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { Button } from "../../components/ui";
+
+// ─── COMPONENTE DE PAGAMENTO ──────────────────────────────
+function PaymentModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  total,
+  cartItems,
+  shipping,
+  discount,
+}) {
+  const [paymentMethod, setPaymentMethod] = useState("pix");
+  const [loading, setLoading] = useState(false);
+  const [paid, setPaid] = useState(false);
+  const [showPix, setShowPix] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos em segundos
+  const [copied, setCopied] = useState(false);
+
+  const paymentMethods = [
+    { id: "pix", label: "PIX", icon: Smartphone },
+    { id: "card", label: "Cartão de Crédito", icon: CreditCard },
+  ];
+
+  // Chave PIX simulada
+  const pixKey = "agah@agahsports.com.br";
+  const pixQrCode =
+    "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=agah@agahsports.com.br";
+
+  // Contador regressivo
+  useState(() => {
+    if (showPix && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeLeft, showPix]);
+
+  // Formata o tempo
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handlePayment = async () => {
+    if (paymentMethod === "pix") {
+      // Abre a interface PIX
+      setShowPix(true);
+      setTimeLeft(600);
+      return;
+    }
+
+    // Para cartão de crédito
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 1800));
+    setLoading(false);
+    setPaid(true);
+    setTimeout(() => {
+      onConfirm();
+    }, 500);
+  };
+
+  const handleCopyPix = () => {
+    navigator.clipboard.writeText(pixKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handlePixConfirm = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setPaid(true);
+      setShowPix(false);
+      setTimeout(() => {
+        onConfirm();
+      }, 500);
+    }, 2000);
+  };
+
+  if (!isOpen) return null;
+
+  if (paid) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div className="relative w-full max-w-md glass rounded-3xl border border-white/10 shadow-2xl p-8 text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center mx-auto mb-4"
+          >
+            <Check size={28} className="text-emerald-400" />
+          </motion.div>
+          <h3 className="text-lg font-bold text-white mb-2">
+            Pagamento Confirmado!
+          </h3>
+          <p className="text-slate-400 text-sm">Processando seu pedido...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── TELA PIX ──────────────────────────────────────────────
+  if (showPix) {
+    const isExpired = timeLeft <= 0;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="relative w-full max-w-md glass rounded-3xl border border-white/10 shadow-2xl p-6"
+        >
+          <button
+            onClick={() => {
+              setShowPix(false);
+              onClose();
+            }}
+            className="absolute top-4 right-4 p-2 rounded-xl glass-light text-slate-400 hover:text-white transition-colors"
+          >
+            <X size={18} />
+          </button>
+
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Smartphone size={24} className="text-green-400" />
+              <h2 className="text-xl font-bold font-display text-white">
+                Pagar com PIX
+              </h2>
+            </div>
+            <p className="text-sm text-slate-400">
+              Escaneie o QR Code ou copie a chave PIX
+            </p>
+          </div>
+
+          {/* QR Code */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-white p-3 rounded-2xl">
+              <img src={pixQrCode} alt="QR Code PIX" className="w-48 h-48" />
+            </div>
+          </div>
+
+          {/* Chave PIX */}
+          <div className="glass-light rounded-xl p-3 mb-4">
+            <div className="text-xs text-slate-400 mb-1">
+              Chave PIX (E-mail)
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white font-mono flex-1 truncate">
+                {pixKey}
+              </span>
+              <button
+                onClick={handleCopyPix}
+                className="p-1.5 rounded-lg glass-light text-slate-400 hover:text-white transition-colors"
+              >
+                {copied ? (
+                  <Check size={16} className="text-emerald-400" />
+                ) : (
+                  <Copy size={16} />
+                )}
+              </button>
+            </div>
+            {copied && (
+              <div className="text-xs text-emerald-400 mt-1">✓ Copiado!</div>
+            )}
+          </div>
+
+          {/* Timer */}
+          <div className="text-center mb-4">
+            <div className="flex items-center justify-center gap-2">
+              <div
+                className={`text-2xl font-bold font-mono ${isExpired ? "text-red-400" : "text-[#D4AF37]"}`}
+              >
+                {formatTime(timeLeft)}
+              </div>
+            </div>
+            <div className="text-xs text-slate-500">
+              {isExpired
+                ? "⏰ Tempo esgotado!"
+                : "⏱️ Tempo restante para pagamento"}
+            </div>
+          </div>
+
+          {/* Valor */}
+          <div className="glass-light rounded-xl p-3 text-center mb-4">
+            <div className="text-xs text-slate-400">Valor a pagar</div>
+            <div className="text-2xl font-bold text-[#D4AF37]">
+              R$ {(total - discount + shipping).toFixed(2).replace(".", ",")}
+            </div>
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowPix(false);
+              }}
+              className="flex-1"
+            >
+              Voltar
+            </Button>
+            <Button
+              onClick={handlePixConfirm}
+              disabled={loading || isExpired}
+              className="flex-1"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Confirmando...
+                </>
+              ) : isExpired ? (
+                "Tempo Esgotado"
+              ) : (
+                "Confirmar Pagamento"
+              )}
+            </Button>
+          </div>
+
+          {isExpired && (
+            <div className="mt-3 text-center text-xs text-red-400">
+              O tempo para pagamento expirou. Clique em "Voltar" e tente
+              novamente.
+            </div>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ─── TELA PRINCIPAL DE PAGAMENTO ──────────────────────────
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 24 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative w-full max-w-lg glass rounded-3xl border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] p-6"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-xl glass-light text-slate-400 hover:text-white transition-colors"
+        >
+          <X size={18} />
+        </button>
+
+        <h2 className="text-xl font-bold font-display text-white mb-6 pr-8">
+          Realizar Pagamento
+        </h2>
+
+        {/* Resumo do pedido */}
+        <div className="glass-light rounded-xl p-4 space-y-2 border border-white/8 mb-5">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400">Itens</span>
+            <span className="text-white font-medium">{cartItems} produtos</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400">Subtotal</span>
+            <span className="text-white font-medium">
+              R$ {total.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-sm text-emerald-400">
+              <span>Desconto</span>
+              <span>- R$ {discount.toFixed(2).replace(".", ",")}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400">Frete</span>
+            <span
+              className={shipping === 0 ? "text-emerald-400" : "text-white"}
+            >
+              {shipping === 0
+                ? "Grátis"
+                : `R$ ${shipping.toFixed(2).replace(".", ",")}`}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm pt-2 border-t border-white/8">
+            <span className="text-slate-400">Total</span>
+            <span className="text-xl font-bold text-[#D4AF37]">
+              R$ {(total - discount + shipping).toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+        </div>
+
+        {/* Métodos de pagamento */}
+        <div>
+          <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
+            Selecione a forma de pagamento
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {paymentMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => setPaymentMethod(method.id)}
+                className={`p-3 rounded-xl text-center transition-all border-2 ${
+                  paymentMethod === method.id
+                    ? "border-[#D4AF37] bg-[#D4AF37]/10"
+                    : "border-white/10 hover:border-white/20 glass-light"
+                }`}
+              >
+                <method.icon
+                  size={20}
+                  className={`mx-auto mb-1 ${paymentMethod === method.id ? "text-[#D4AF37]" : "text-slate-400"}`}
+                />
+                <div
+                  className={`text-[9px] font-semibold ${
+                    paymentMethod === method.id
+                      ? "text-white"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {method.label}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Dados do cartão (se selecionado) */}
+        {paymentMethod === "card" && (
+          <div className="glass-light rounded-xl p-4 space-y-3 border border-white/8 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  Número do cartão
+                </label>
+                <input
+                  type="text"
+                  placeholder="0000 0000 0000 0000"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg text-white text-sm px-3 py-2 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  Validade
+                </label>
+                <input
+                  type="text"
+                  placeholder="MM/AA"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg text-white text-sm px-3 py-2 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  CVV
+                </label>
+                <input
+                  type="text"
+                  placeholder="123"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg text-white text-sm px-3 py-2 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                  Nome no cartão
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nome como está no cartão"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg text-white text-sm px-3 py-2 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Segurança */}
+        <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-4">
+          <Lock size={12} className="text-[#D4AF37]" />
+          <span>Pagamento seguro com criptografia</span>
+          <Shield size={12} className="text-[#D4AF37] ml-2" />
+          <span>Dados protegidos</span>
+        </div>
+
+        {/* Botões */}
+        <div className="flex gap-3 mt-4">
+          <Button variant="secondary" onClick={onClose} className="flex-1">
+            Cancelar
+          </Button>
+          <Button onClick={handlePayment} disabled={loading} className="flex-1">
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processando...
+              </>
+            ) : (
+              `Pagar R$ ${(total - discount + shipping).toFixed(2).replace(".", ",")}`
+            )}
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 export default function ClientCart() {
   const { cart, removeFromCart, updateCartQty, cartTotal, clearCart } =
@@ -21,6 +426,7 @@ export default function ClientCart() {
   const [couponApplied, setCouponApplied] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [ordered, setOrdered] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
   const navigate = useNavigate();
 
   const shipping = cartTotal > 300 ? 0 : 29.9;
@@ -31,12 +437,22 @@ export default function ClientCart() {
     if (coupon.toUpperCase() === "AGAH10") setCouponApplied(true);
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
+    setShowPayment(true);
+  };
+
+  const handleConfirmPayment = () => {
+    setShowPayment(false);
     setCheckingOut(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    setOrdered(true);
-    clearCart();
-    setTimeout(() => navigate("/cliente/pedidos"), 2000);
+    setTimeout(() => {
+      setOrdered(true);
+      clearCart();
+      setTimeout(() => navigate("/cliente/pedidos"), 2000);
+    }, 1000);
+  };
+
+  const handleCancelPayment = () => {
+    setShowPayment(false);
   };
 
   if (ordered) {
@@ -110,7 +526,7 @@ export default function ClientCart() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Items */}
+        {/* Items - mesmo código de antes */}
         <div className="xl:col-span-2 space-y-3">
           <AnimatePresence>
             {cart.map((item) => (
@@ -122,13 +538,12 @@ export default function ClientCart() {
                 exit={{ opacity: 0, x: -30, height: 0 }}
                 className="glass rounded-2xl p-4 flex items-center gap-4"
               >
-                {/* Product image */}
-                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a]">
+                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a] flex items-center justify-center p-1">
                   {item.product.image ? (
                     <img
                       src={item.product.image}
                       alt={item.product.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         e.target.style.display = "none";
                         e.target.parentElement.innerHTML = `
@@ -168,7 +583,6 @@ export default function ClientCart() {
                   </div>
                 </div>
 
-                {/* Quantity */}
                 <div className="flex items-center gap-2 glass-light rounded-xl border border-white/8 px-3 py-1.5 flex-shrink-0">
                   <button
                     onClick={() =>
@@ -191,7 +605,6 @@ export default function ClientCart() {
                   </button>
                 </div>
 
-                {/* Subtotal */}
                 <div className="text-right flex-shrink-0">
                   <div className="font-bold text-white">
                     R${" "}
@@ -210,7 +623,6 @@ export default function ClientCart() {
             ))}
           </AnimatePresence>
 
-          {/* Continue shopping */}
           <Link
             to="/cliente/produtos"
             className="flex items-center gap-2 text-sm text-[#D4AF37] hover:text-[#e8c970] transition-colors pt-2 px-1"
@@ -221,7 +633,6 @@ export default function ClientCart() {
 
         {/* Summary */}
         <div className="space-y-4">
-          {/* Coupon */}
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Tag size={14} className="text-[#D4AF37]" />
@@ -258,7 +669,6 @@ export default function ClientCart() {
             )}
           </div>
 
-          {/* Order summary */}
           <div className="glass rounded-2xl p-5">
             <h3 className="text-sm font-semibold text-white mb-4">
               Resumo do Pedido
@@ -325,6 +735,17 @@ export default function ClientCart() {
           </div>
         </div>
       </div>
+
+      {/* ─── MODAL DE PAGAMENTO ───────────────────────────── */}
+      <PaymentModal
+        isOpen={showPayment}
+        onClose={handleCancelPayment}
+        onConfirm={handleConfirmPayment}
+        total={cartTotal}
+        cartItems={cart.length}
+        shipping={shipping}
+        discount={discount}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import logoAgah from "../../assets/logo-agah.jpg";
+import logoTextoAgah from "../../assets/agah-escrito.jpg";
 
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -38,6 +38,13 @@ const navItems = [
   { to: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/admin/atendimento", label: "Atendimento", icon: MessageSquare },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
+];
+
+const topNavLinks = [
+  { label: "Início", href: "/admin" },
+  { label: "Produtos", href: "/admin/produtos" },
+  { label: "Eventos", href: "/admin/eventos" },
+  { label: "Contato", href: "/admin/atendimento" },
 ];
 
 export default function AdminLayout({ children }) {
@@ -56,7 +63,6 @@ export default function AdminLayout({ children }) {
       className="flex h-screen overflow-hidden"
       style={{ background: "#000000" }}
     >
-      {/* Sidebar */}
       <motion.aside
         animate={{ width: collapsed ? 68 : 240 }}
         transition={{ duration: 0.2, ease: "easeInOut" }}
@@ -66,27 +72,38 @@ export default function AdminLayout({ children }) {
           borderRight: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        {/* Logo */}
         <div className="flex items-center h-16 px-4 border-b border-white/6">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <img
-              src={logoAgah}
-              alt="AGAH Logo"
-              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-            />
+          <Link to="/admin" className="flex items-center overflow-hidden">
             <AnimatePresence>
-              {!collapsed && (
-                <motion.span
+              {!collapsed ? (
+                <motion.div
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
-                  className="font-display font-bold text-white text-lg whitespace-nowrap overflow-hidden"
+                  className="flex-shrink-0 flex items-center"
                 >
-                  AGAH
-                </motion.span>
+                  <img
+                    src={logoTextoAgah}
+                    alt="AGAH"
+                    className="h-7 w-auto object-contain"
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="flex-shrink-0 flex items-center"
+                >
+                  <img
+                    src={logoTextoAgah}
+                    alt="AGAH"
+                    className="h-5 w-auto object-contain"
+                  />
+                </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </Link>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="ml-auto p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
@@ -95,7 +112,6 @@ export default function AdminLayout({ children }) {
           </button>
         </div>
 
-        {/* Role badge */}
         {!collapsed && (
           <div className="px-4 pt-3 pb-1">
             <span className="text-[10px] font-semibold text-[#D4AF37]/70 uppercase tracking-widest">
@@ -104,7 +120,6 @@ export default function AdminLayout({ children }) {
           </div>
         )}
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-2 space-y-0.5 px-2">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
@@ -153,27 +168,31 @@ export default function AdminLayout({ children }) {
           ))}
         </nav>
 
-        {/* User / bottom */}
         <div className="p-3 border-t border-white/6">
           <div className="flex items-center gap-3 px-1 mb-2">
-            <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {user?.avatar}
-            </div>
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex-1 overflow-hidden min-w-0"
-                >
-                  <div className="text-sm font-medium text-white truncate">
-                    {user?.name}
-                  </div>
-                  <div className="text-xs text-slate-500">Administrador</div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <Link
+              to="/admin/configuracoes"
+              className="flex items-center gap-3 flex-1 min-w-0 hover:bg-white/5 rounded-xl p-1 transition-colors"
+            >
+              <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {user?.avatar}
+              </div>
+              <AnimatePresence>
+                {!collapsed && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 overflow-hidden min-w-0"
+                  >
+                    <div className="text-sm font-medium text-white truncate">
+                      {user?.name}
+                    </div>
+                    <div className="text-xs text-slate-500">Administrador</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Link>
           </div>
           <button
             onClick={handleLogout}
@@ -185,17 +204,35 @@ export default function AdminLayout({ children }) {
         </div>
       </motion.aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
         <header
           className="h-16 flex items-center justify-between px-6 border-b border-white/6 flex-shrink-0"
           style={{ background: "#0a0a0a" }}
         >
-          <div className="text-sm text-slate-500">
-            <span className="text-[#D4AF37]">AGAH</span>{" "}
-            <span className="text-slate-600">/</span> Admin
-          </div>
+          <Link
+            to="/admin"
+            className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+          >
+            <img
+              src={logoTextoAgah}
+              alt="AGAH"
+              className="h-4 w-auto object-contain"
+            />
+            <span className="text-slate-600 text-sm">/ Admin</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8">
+            {topNavLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.href}
+                className="text-sm text-slate-300 hover:text-white transition-colors font-medium"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
               <Bell size={18} />
@@ -203,13 +240,15 @@ export default function AdminLayout({ children }) {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D4AF37] rounded-full" />
               )}
             </button>
-            <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold">
+            <Link
+              to="/admin/configuracoes"
+              className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity cursor-pointer"
+            >
               {user?.avatar}
-            </div>
+            </Link>
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">
           <motion.div
             initial={{ opacity: 0, y: 10 }}

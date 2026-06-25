@@ -24,6 +24,7 @@ import {
 import LandingNav from "./LandingNav";
 import { products, events } from "../../data/mockData";
 import { Button, Input } from "../../components/ui";
+import logoTextoAgah from "../../assets/agah-escrito.jpg";
 
 // ─── HERO ─────────────────────────────────────────────────
 function Hero() {
@@ -33,7 +34,6 @@ function Hero() {
       id="home"
       className="relative min-h-screen flex items-center pt-16 overflow-hidden"
     >
-      {/* Background decoration - usando dourado */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-20 -translate-y-1/3 translate-x-1/4"
@@ -142,7 +142,6 @@ function Hero() {
           </div>
         </motion.div>
 
-        {/* Visual side */}
         <motion.div
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -150,20 +149,23 @@ function Hero() {
           className="relative hidden xl:block"
         >
           <div
-            className="relative h-[480px] rounded-3xl overflow-hidden glass border border-white/10"
+            className="relative h-[480px] rounded-3xl overflow-hidden border border-white/10"
             style={{
-              background:
-                "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)",
+              background: "#0a0a0a",
             }}
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Package size={140} className="text-white/5" />
-            </div>
-            {/* Floating cards */}
+            <img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmiuBaJ-47KAXsfBpJ_ioMI54P5zdrnuoWwqIrmtbko2wxUJzDsFmeQwU&s=10"
+              alt="Produtos AGAH"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
+            <div className="absolute inset-0 bg-black/30"></div>
+
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 left-8 glass rounded-2xl p-4 border border-white/10 shadow-xl"
+              className="absolute top-10 left-8 glass rounded-2xl p-4 border border-white/10 shadow-xl z-10"
             >
               <div className="flex items-center gap-2 mb-1">
                 <Star size={12} className="text-amber-400 fill-amber-400" />
@@ -171,10 +173,11 @@ function Hero() {
                   4.9/5.0
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400">
+              <div className="text-[10px] text-slate-300">
                 +2.000 avaliações
               </div>
             </motion.div>
+
             <motion.div
               animate={{ y: [0, 10, 0] }}
               transition={{
@@ -183,7 +186,7 @@ function Hero() {
                 ease: "easeInOut",
                 delay: 0.5,
               }}
-              className="absolute bottom-32 right-8 glass rounded-2xl p-4 border border-white/10 shadow-xl"
+              className="absolute bottom-32 right-8 glass rounded-2xl p-4 border border-white/10 shadow-xl z-10"
             >
               <div className="flex items-center gap-2 mb-1">
                 <Zap size={12} className="text-[#D4AF37]" />
@@ -191,8 +194,9 @@ function Hero() {
                   Produção Rápida
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400">10-20 dias úteis</div>
+              <div className="text-[10px] text-slate-300">10-20 dias úteis</div>
             </motion.div>
+
             <motion.div
               animate={{ y: [0, -8, 0] }}
               transition={{
@@ -201,7 +205,7 @@ function Hero() {
                 ease: "easeInOut",
                 delay: 1,
               }}
-              className="absolute bottom-8 left-12 glass rounded-2xl p-4 border border-white/10 shadow-xl"
+              className="absolute bottom-8 left-12 glass rounded-2xl p-4 border border-white/10 shadow-xl z-10"
             >
               <div className="flex items-center gap-2 mb-1">
                 <Shield size={12} className="text-emerald-400" />
@@ -217,10 +221,26 @@ function Hero() {
   );
 }
 
-// ─── FEATURED PRODUCTS ────────────────────────────────────
+// ─── FEATURED PRODUCTS COM IMAGENS ATUALIZADAS ──────────
 function FeaturedProducts() {
   const navigate = useNavigate();
   const featured = products.slice(0, 4);
+
+  // Imagens atualizadas dos produtos
+  const productImages = {
+    1: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUsbwHMVb_uPxNkEhnFzmuaFM2J1c0v3oSwYqhd13siZbGYqMH4Mb0ebE&s=10",
+    2: "https://static.santosbikes.com.br/public/santosbikes/imagens/produtos/a2ea238aa0c92ed0761fd9a6dac22cd5.png",
+    3: "https://static.santosbikes.com.br/public/santosbikes/imagens/produtos/camisa-ciclismo-agah-soft-7090.png",
+    4: "https://agahsports.com.br/wp-content/uploads/2025/11/Imagem-do-WhatsApp-de-2025-11-18-as-23.52.37_ac0c7aa8.jpg",
+  };
+
+  // Nomes atualizados dos produtos
+  const productNames = {
+    1: "Camisa Night Run",
+    2: "Kit AGAH Ciclismo",
+    3: "Camisa Ciclismo Pro",
+    4: "Camisa AGAH Personalizada",
+  };
 
   return (
     <section id="produtos" className="py-24 px-6 relative">
@@ -249,18 +269,39 @@ function FeaturedProducts() {
               className="glass rounded-2xl overflow-hidden card-hover cursor-pointer group"
               onClick={() => navigate("/login")}
             >
-              <div
-                className="h-40 relative flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)",
-                }}
-              >
-                <Package
-                  size={36}
-                  className="text-white/10 group-hover:text-white/15 transition-colors"
-                />
+              <div className="h-56 relative overflow-hidden bg-[#0a0a0a]">
+                {productImages[p.id] ? (
+                  <img
+                    src={productImages[p.id]}
+                    alt={productNames[p.id] || p.name}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                    style={{
+                      objectPosition: i === 0 ? "center 65%" : "center",
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.parentElement.innerHTML = `
+                        <div class="absolute inset-0 flex items-center justify-center">
+                          <svg class="text-white/10" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                            <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                            <path d="M4 6h16"/>
+                            <path d="M4 10h10"/>
+                          </svg>
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Package
+                      size={36}
+                      className="text-white/10 group-hover:text-white/15 transition-colors"
+                    />
+                  </div>
+                )}
                 {p.customizable && (
-                  <span className="absolute top-3 left-3 text-[9px] bg-[#D4AF37]/25 text-[#D4AF37] border border-[#D4AF37]/30 px-2 py-0.5 rounded-full font-semibold uppercase">
+                  <span className="absolute top-3 left-3 text-[9px] bg-[#D4AF37]/80 text-black px-2 py-0.5 rounded-full font-semibold uppercase">
                     Custom
                   </span>
                 )}
@@ -270,7 +311,7 @@ function FeaturedProducts() {
                   {p.category}
                 </div>
                 <h3 className="text-sm font-semibold text-white mb-2 leading-tight line-clamp-2">
-                  {p.name}
+                  {productNames[p.id] || p.name}
                 </h3>
                 <div className="text-lg font-bold text-white">
                   R$ {p.price.toFixed(2).replace(".", ",")}
@@ -293,9 +334,40 @@ function FeaturedProducts() {
   );
 }
 
-// ─── EVENTS ───────────────────────────────────────────────
+// ─── EVENTS COM IMAGENS E LOCALIZAÇÃO ATUALIZADAS ──────
 function EventsSection() {
   const navigate = useNavigate();
+
+  const eventosAtualizados = [
+    {
+      id: 1,
+      name: "Agah Night Run",
+      location: "Muriaé, MG",
+      date: "2025-08-15",
+      price: 89.9,
+      image:
+        "https://cdn.fotto.com.br/galleries/319845/cover.1776592898106.jpg",
+    },
+    {
+      id: 2,
+      name: "Corre Pela Vida",
+      location: "Muriaé, MG",
+      date: "2025-09-20",
+      price: 69.9,
+      image:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcVgPQ_bV4MBxvUS92nZfHgO3PwGKWt_RjvDg99AhXxg&s=10",
+    },
+    {
+      id: 3,
+      name: "Corre Delas",
+      location: "Muriaé, MG",
+      date: "2025-10-05",
+      price: 79.9,
+      image:
+        "https://i.ytimg.com/vi/rHiaw-zBwos/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBrMYx3VuFscQAGABemA7QdcJyPIA",
+    },
+  ];
+
   return (
     <section
       id="eventos"
@@ -317,7 +389,7 @@ function EventsSection() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {events.slice(0, 3).map((event, i) => (
+          {eventosAtualizados.map((event, i) => (
             <motion.div
               key={event.id}
               initial={{ opacity: 0, y: 20 }}
@@ -327,14 +399,29 @@ function EventsSection() {
               className="glass rounded-2xl overflow-hidden card-hover cursor-pointer"
               onClick={() => navigate("/login")}
             >
-              <div
-                className="h-36 relative flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg, #0a0a0a, #1a1a1a)",
-                }}
-              >
-                <Trophy size={40} className="text-[#D4AF37]/15" />
-                <div className="absolute top-3 left-3 glass rounded-lg px-2.5 py-1.5 text-center border border-white/10">
+              <div className="h-48 relative overflow-hidden bg-[#0a0a0a]">
+                <img
+                  src={event.image}
+                  alt={event.name}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                  style={{
+                    objectPosition: i === 0 ? "center 20%" : "center",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.parentElement.innerHTML = `
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="text-white/10" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                          <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                          <path d="M4 6h16"/>
+                          <path d="M4 10h10"/>
+                        </svg>
+                      </div>
+                    `;
+                  }}
+                />
+                <div className="absolute top-3 left-3 glass rounded-lg px-2.5 py-1.5 text-center border border-white/10 backdrop-blur-sm">
                   <div className="text-sm font-bold text-white leading-none">
                     {new Date(event.date).toLocaleDateString("pt-BR", {
                       day: "2-digit",
@@ -357,7 +444,7 @@ function EventsSection() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-lg font-bold text-white">
-                    R$ {event.price.toFixed(0)}
+                    R$ {event.price.toFixed(2).replace(".", ",")}
                   </span>
                   <span className="text-xs text-[#D4AF37] font-semibold flex items-center gap-1">
                     Inscreva-se <ArrowRight size={11} />
@@ -572,7 +659,6 @@ function ContactFooter() {
       style={{ background: "#0a0a0a" }}
     >
       <div className="max-w-7xl mx-auto grid xl:grid-cols-2 gap-12">
-        {/* Form */}
         <div>
           <div className="text-xs font-semibold text-[#D4AF37] uppercase tracking-widest mb-3">
             Fale Conosco
@@ -628,13 +714,12 @@ function ContactFooter() {
           )}
         </div>
 
-        {/* Info + footer links */}
         <div className="flex flex-col justify-between">
           <div className="space-y-4 mb-10">
             {[
               { icon: Mail, value: "contato@agah.com.br" },
               { icon: Phone, value: "(31) 99999-0000" },
-              { icon: MapPin, value: "Contagem, MG — Brasil" },
+              { icon: MapPin, value: "Muriaé, MG — Brasil" },
             ].map((item) => (
               <div key={item.value} className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#D4AF37]/15 rounded-xl flex items-center justify-center">
@@ -650,9 +735,11 @@ function ContactFooter() {
               <div className="w-9 h-9 gradient-brand rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-xs">AG</span>
               </div>
-              <span className="font-display font-bold text-lg text-white">
-                AGAH
-              </span>
+              <img
+                src={logoTextoAgah}
+                alt="AGAH"
+                className="h-6 w-auto object-contain"
+              />
             </div>
             <p className="text-xs text-slate-500 mb-4 max-w-sm">
               Confecção esportiva premium para equipes, academias e eventos.
