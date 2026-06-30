@@ -27,8 +27,15 @@ import {
 } from "../../components/ui";
 import { useApp } from "../../context/AppContext";
 
-// CATEGORIAS ATUALIZADAS
-const categories = ["Todas", "Camisas", "Uniformes", "Shorts", "Kits"];
+// ✅ CATEGORIAS ATUALIZADAS
+const categories = [
+  "Todas",
+  "Camisas",
+  "Uniformes",
+  "Shorts",
+  "Kits",
+  "Macaquinhos",
+];
 
 const statusOptions = ["Ativo", "Inativo", "Em produção"];
 
@@ -332,7 +339,7 @@ export default function AdminProducts() {
         }
       />
 
-      {/* Category Filter */}
+      {/* ✅ Category Filter - COM KITS E MACAQUINHOS */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {categories.map((cat) => (
           <button
@@ -638,7 +645,6 @@ export default function AdminProducts() {
                   </div>
                 </div>
               </div>
-              {/* ✅ Botão Excluir no modal de detalhes */}
               <button
                 onClick={() => {
                   const productToDelete = selected;
