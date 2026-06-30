@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Package,
@@ -8,6 +8,9 @@ import {
   Edit2,
   Trash2,
   Filter,
+  X,
+  Check,
+  Search,
 } from "lucide-react";
 import {
   PageHeader,
@@ -24,28 +27,59 @@ import {
 } from "../../components/ui";
 import { useApp } from "../../context/AppContext";
 
-const categories = [
-  "Todas",
-  "Camisas",
-  "Regatas",
-  "Uniformes",
-  "Shorts",
-  "Calças",
-  "Leggings",
-  "Jaquetas",
-  "Moletons",
-  "Bermudas",
-  "Acessórios",
-];
+// CATEGORIAS ATUALIZADAS
+const categories = ["Todas", "Camisas", "Uniformes", "Shorts", "Kits"];
+
+const statusOptions = ["Ativo", "Inativo", "Em produção"];
 
 export default function AdminProducts() {
-  const { products } = useApp();
+  const { products, addProduct, deleteProduct, updateProduct } = useApp();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [viewMode, setViewMode] = useState("grid");
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
+  // Estado para novo produto
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    code: "",
+    category: "Camisas",
+    fabric: "",
+    price: "",
+    cost: "",
+    stock: "",
+    sizes: "",
+    colors: "",
+    image: "",
+    customizable: false,
+    status: "Ativo",
+  });
+
+  // Estado para edição de produto
+  const [editingProduct, setEditingProduct] = useState({
+    id: null,
+    name: "",
+    code: "",
+    category: "Camisas",
+    fabric: "",
+    price: "",
+    cost: "",
+    stock: "",
+    sizes: "",
+    colors: "",
+    image: "",
+    customizable: false,
+    status: "Ativo",
+  });
+
+  // Filtrar produtos
   const filtered = products.filter((p) => {
     const matchSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -54,7 +88,227 @@ export default function AdminProducts() {
     return matchSearch && matchCat;
   });
 
-  const margin = (p) => (((p.price - p.cost) / p.price) * 100).toFixed(0);
+  const margin = (p) => {
+    if (!p.cost || p.cost === 0) return "0";
+    return (((p.price - p.cost) / p.price) * 100).toFixed(0);
+  };
+
+  // ─── FUNÇÕES DE FORMULÁRIO ──────────────────────────────
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setNewProduct((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    if (validationError) setValidationError("");
+    if (successMessage) setSuccessMessage("");
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditingProduct((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    if (validationError) setValidationError("");
+    if (successMessage) setSuccessMessage("");
+  };
+
+  // ─── CRIAR PRODUTO ──────────────────────────────────────
+  const handleCreateProduct = () => {
+    if (!newProduct.name.trim()) {
+      setValidationError("⚠️ O campo Nome é obrigatório.");
+      return;
+    }
+    if (!newProduct.code.trim()) {
+      setValidationError("⚠️ O campo Código é obrigatório.");
+      return;
+    }
+    if (!newProduct.price || parseFloat(newProduct.price) <= 0) {
+      setValidationError(
+        "⚠️ O campo Preço de Venda é obrigatório e deve ser maior que 0.",
+      );
+      return;
+    }
+    if (!newProduct.cost || parseFloat(newProduct.cost) <= 0) {
+      setValidationError(
+        "⚠️ O campo Custo é obrigatório e deve ser maior que 0.",
+      );
+      return;
+    }
+
+    setIsSaving(true);
+
+    setTimeout(() => {
+      const maxId = products.reduce((max, p) => Math.max(max, p.id), 0);
+      const productToAdd = {
+        id: maxId + 1,
+        name: newProduct.name.trim(),
+        code: newProduct.code.trim().toUpperCase(),
+        category: newProduct.category,
+        fabric: newProduct.fabric || "Dry Fit",
+        price: parseFloat(newProduct.price),
+        cost: parseFloat(newProduct.cost),
+        stock: parseInt(newProduct.stock) || 0,
+        sizes: newProduct.sizes.split(",").map((s) => s.trim()),
+        colors: newProduct.colors.split(",").map((c) => c.trim()),
+        image: newProduct.image || null,
+        customizable: newProduct.customizable,
+        status: newProduct.status,
+      };
+
+      addProduct(productToAdd);
+
+      setNewProduct({
+        name: "",
+        code: "",
+        category: "Camisas",
+        fabric: "",
+        price: "",
+        cost: "",
+        stock: "",
+        sizes: "",
+        colors: "",
+        image: "",
+        customizable: false,
+        status: "Ativo",
+      });
+      setValidationError("");
+      setSuccessMessage("✅ Produto criado com sucesso!");
+      setIsSaving(false);
+
+      setTimeout(() => {
+        setShowModal(false);
+        setSuccessMessage("");
+      }, 1000);
+    }, 500);
+  };
+
+  // ─── EDIÇÃO DE PRODUTO ──────────────────────────────────
+  const handleEditProduct = (product) => {
+    setEditingProduct({
+      id: product.id,
+      name: product.name,
+      code: product.code,
+      category: product.category,
+      fabric: product.fabric || "",
+      price: product.price.toString(),
+      cost: product.cost ? product.cost.toString() : "",
+      stock: product.stock.toString(),
+      sizes: Array.isArray(product.sizes) ? product.sizes.join(", ") : "",
+      colors: Array.isArray(product.colors) ? product.colors.join(", ") : "",
+      image: product.image || "",
+      customizable: product.customizable || false,
+      status: product.status || "Ativo",
+    });
+    setShowEditModal(true);
+    setValidationError("");
+    setSuccessMessage("");
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingProduct.name.trim()) {
+      setValidationError("⚠️ O campo Nome é obrigatório.");
+      return;
+    }
+    if (!editingProduct.code.trim()) {
+      setValidationError("⚠️ O campo Código é obrigatório.");
+      return;
+    }
+    if (!editingProduct.price || parseFloat(editingProduct.price) <= 0) {
+      setValidationError(
+        "⚠️ O campo Preço de Venda é obrigatório e deve ser maior que 0.",
+      );
+      return;
+    }
+    if (!editingProduct.cost || parseFloat(editingProduct.cost) <= 0) {
+      setValidationError(
+        "⚠️ O campo Custo é obrigatório e deve ser maior que 0.",
+      );
+      return;
+    }
+
+    setIsSaving(true);
+
+    setTimeout(() => {
+      const updatedProduct = {
+        name: editingProduct.name.trim(),
+        code: editingProduct.code.trim().toUpperCase(),
+        category: editingProduct.category,
+        fabric: editingProduct.fabric || "Dry Fit",
+        price: parseFloat(editingProduct.price),
+        cost: parseFloat(editingProduct.cost),
+        stock: parseInt(editingProduct.stock) || 0,
+        sizes: editingProduct.sizes.split(",").map((s) => s.trim()),
+        colors: editingProduct.colors.split(",").map((c) => c.trim()),
+        image: editingProduct.image || null,
+        customizable: editingProduct.customizable,
+        status: editingProduct.status,
+      };
+
+      updateProduct(editingProduct.id, updatedProduct);
+
+      if (selected && selected.id === editingProduct.id) {
+        setSelected({ ...selected, ...updatedProduct });
+      }
+
+      setValidationError("");
+      setSuccessMessage("✅ Produto atualizado com sucesso!");
+      setIsSaving(false);
+
+      setTimeout(() => {
+        setShowEditModal(false);
+        setSuccessMessage("");
+        setEditingProduct({
+          id: null,
+          name: "",
+          code: "",
+          category: "Camisas",
+          fabric: "",
+          price: "",
+          cost: "",
+          stock: "",
+          sizes: "",
+          colors: "",
+          image: "",
+          customizable: false,
+          status: "Ativo",
+        });
+      }, 1000);
+    }, 500);
+  };
+
+  // ─── EXCLUIR PRODUTO ────────────────────────────────────
+  const handleDeleteProduct = (product) => {
+    setProductToDelete(product);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (productToDelete) {
+      deleteProduct(productToDelete.id);
+      setShowDeleteConfirm(false);
+      if (selected && selected.id === productToDelete.id) {
+        setSelected(null);
+      }
+      setProductToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setProductToDelete(null);
+  };
+
+  // ─── FILTRO ─────────────────────────────────────────────
+  const handleCategoryFilter = (cat) => {
+    setCategory(cat);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategory("Todas");
+  };
 
   return (
     <div>
@@ -63,8 +317,13 @@ export default function AdminProducts() {
         subtitle={`${products.length} produtos cadastrados`}
         actions={
           <>
-            <Button variant="secondary" icon={Filter} size="sm">
-              Filtros
+            <Button
+              variant="secondary"
+              icon={Filter}
+              size="sm"
+              onClick={clearFilters}
+            >
+              Limpar Filtros
             </Button>
             <Button icon={Plus} onClick={() => setShowModal(true)}>
               Novo Produto
@@ -78,7 +337,7 @@ export default function AdminProducts() {
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setCategory(cat)}
+            onClick={() => handleCategoryFilter(cat)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               category === cat
                 ? "gradient-brand text-white"
@@ -94,23 +353,30 @@ export default function AdminProducts() {
         <SearchInput
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar produto..."
+          placeholder="Buscar produto por nome ou código..."
           className="flex-1 max-w-sm"
         />
         <div className="flex glass-light rounded-xl border border-white/8 p-1">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-1.5 rounded-lg transition-colors ${viewMode === "grid" ? "bg-white/10 text-white" : "text-slate-500"}`}
+            className={`p-1.5 rounded-lg transition-colors ${
+              viewMode === "grid" ? "bg-white/10 text-white" : "text-slate-500"
+            }`}
           >
             <Layers size={14} />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-1.5 rounded-lg transition-colors ${viewMode === "list" ? "bg-white/10 text-white" : "text-slate-500"}`}
+            className={`p-1.5 rounded-lg transition-colors ${
+              viewMode === "list" ? "bg-white/10 text-white" : "text-slate-500"
+            }`}
           >
             <Tag size={14} />
           </button>
         </div>
+        <span className="text-xs text-slate-600">
+          {filtered.length} produto{filtered.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       {viewMode === "grid" ? (
@@ -124,7 +390,6 @@ export default function AdminProducts() {
               className="glass rounded-2xl overflow-hidden card-hover cursor-pointer"
               onClick={() => setSelected(product)}
             >
-              {/* ✅ IMAGEM CORRIGIDA: object-contain + flex + padding */}
               <div className="h-48 relative overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-2">
                 {product.image ? (
                   <img
@@ -216,7 +481,6 @@ export default function AdminProducts() {
               >
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {/* ✅ IMAGEM CORRIGIDA: object-contain + flex + padding na lista */}
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-1 flex-shrink-0">
                       {p.image ? (
                         <img
@@ -286,9 +550,20 @@ export default function AdminProducts() {
                       variant="ghost"
                       size="sm"
                       icon={Edit2}
-                      onClick={() => setSelected(p)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProduct(p);
+                      }}
                     />
-                    <Button variant="ghost" size="sm" icon={Trash2} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProduct(p);
+                      }}
+                    />
                   </div>
                 </TableCell>
               </motion.tr>
@@ -297,7 +572,19 @@ export default function AdminProducts() {
         </div>
       )}
 
-      {/* Product Detail Modal */}
+      {filtered.length === 0 && (
+        <div className="text-center py-16">
+          <Package size={40} className="text-slate-700 mx-auto mb-4" />
+          <div className="text-white font-semibold mb-2">
+            Nenhum produto encontrado
+          </div>
+          <div className="text-sm text-slate-500">
+            Tente outra busca ou categoria
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL DE DETALHES DO PRODUTO ─────────────────── */}
       <Modal
         isOpen={!!selected}
         onClose={() => setSelected(null)}
@@ -306,50 +593,63 @@ export default function AdminProducts() {
       >
         {selected && (
           <div className="space-y-5">
-            <div className="flex items-start gap-4">
-              {/* ✅ IMAGEM CORRIGIDA: object-contain + flex + padding no modal */}
-              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a] flex items-center justify-center p-2">
-                {selected.image ? (
-                  <img
-                    src={selected.image}
-                    alt={selected.name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.parentElement.innerHTML = `
-                        <div class="w-full h-full flex items-center justify-center">
-                          <svg class="text-white/20" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
-                            <path d="M4 18l4-4 2 2 4-4 4 4"/>
-                            <path d="M4 6h16"/>
-                            <path d="M4 10h10"/>
-                          </svg>
-                        </div>
-                      `;
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package size={32} className="text-white/20" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="text-xs font-mono text-[#D4AF37] mb-1">
-                  {selected.code}
-                </div>
-                <h3 className="text-lg font-bold font-display text-white">
-                  {selected.name}
-                </h3>
-                <div className="flex items-center gap-2 mt-2">
-                  <StatusBadge status={selected.status} />
-                  {selected.customizable && (
-                    <span className="text-[10px] bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/20 px-2 py-0.5 rounded-full font-semibold uppercase">
-                      Personalizável
-                    </span>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-[#0a0a0a] flex items-center justify-center p-2">
+                  {selected.image ? (
+                    <img
+                      src={selected.image}
+                      alt={selected.name}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML = `
+                          <div class="w-full h-full flex items-center justify-center">
+                            <svg class="text-white/20" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                              <path d="M4 18l4-4 2 2 4-4 4 4"/>
+                              <path d="M4 6h16"/>
+                              <path d="M4 10h10"/>
+                            </svg>
+                          </div>
+                        `;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package size={32} className="text-white/20" />
+                    </div>
                   )}
                 </div>
+                <div>
+                  <div className="text-xs font-mono text-[#D4AF37] mb-1">
+                    {selected.code}
+                  </div>
+                  <h3 className="text-lg font-bold font-display text-white">
+                    {selected.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <StatusBadge status={selected.status} />
+                    {selected.customizable && (
+                      <span className="text-[10px] bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/20 px-2 py-0.5 rounded-full font-semibold uppercase">
+                        Personalizável
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
+              {/* ✅ Botão Excluir no modal de detalhes */}
+              <button
+                onClick={() => {
+                  const productToDelete = selected;
+                  setSelected(null);
+                  handleDeleteProduct(productToDelete);
+                }}
+                className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors flex-shrink-0"
+                title="Excluir produto"
+              >
+                <Trash2 size={18} />
+              </button>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
@@ -393,14 +693,15 @@ export default function AdminProducts() {
               <div className="glass-light rounded-xl p-3">
                 <div className="text-xs text-slate-500 mb-1">Tamanhos</div>
                 <div className="flex gap-1 flex-wrap">
-                  {selected.sizes.map((s) => (
-                    <span
-                      key={s}
-                      className="text-xs bg-white/8 px-1.5 py-0.5 rounded text-white"
-                    >
-                      {s}
-                    </span>
-                  ))}
+                  {Array.isArray(selected.sizes) &&
+                    selected.sizes.map((s) => (
+                      <span
+                        key={s}
+                        className="text-xs bg-white/8 px-1.5 py-0.5 rounded text-white"
+                      >
+                        {s}
+                      </span>
+                    ))}
                 </div>
               </div>
             </div>
@@ -410,14 +711,15 @@ export default function AdminProducts() {
                 Cores disponíveis
               </div>
               <div className="flex gap-2 flex-wrap">
-                {selected.colors.map((c) => (
-                  <span
-                    key={c}
-                    className="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded-lg text-slate-300"
-                  >
-                    {c}
-                  </span>
-                ))}
+                {Array.isArray(selected.colors) &&
+                  selected.colors.map((c) => (
+                    <span
+                      key={c}
+                      className="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded-lg text-slate-300"
+                    >
+                      {c}
+                    </span>
+                  ))}
               </div>
             </div>
 
@@ -429,7 +731,15 @@ export default function AdminProducts() {
               >
                 Fechar
               </Button>
-              <Button className="flex-1" icon={Edit2}>
+              <Button
+                className="flex-1"
+                icon={Edit2}
+                onClick={() => {
+                  const product = selected;
+                  setSelected(null);
+                  handleEditProduct(product);
+                }}
+              >
                 Editar Produto
               </Button>
             </div>
@@ -437,55 +747,557 @@ export default function AdminProducts() {
         )}
       </Modal>
 
-      {/* New Product Modal */}
+      {/* ─── MODAL DE CRIAÇÃO DE PRODUTO ──────────────────── */}
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          setNewProduct({
+            name: "",
+            code: "",
+            category: "Camisas",
+            fabric: "",
+            price: "",
+            cost: "",
+            stock: "",
+            sizes: "",
+            colors: "",
+            image: "",
+            customizable: false,
+            status: "Ativo",
+          });
+          setValidationError("");
+          setSuccessMessage("");
+        }}
         title="Novo Produto"
         size="lg"
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Nome do produto"
-              placeholder="Ex: Camisa Manga Curta"
-              required
-              className="col-span-2"
-            />
-            <Input label="Código" placeholder="AGH-000" required />
-            <Input label="Categoria" placeholder="Camisas" />
-            <Input
-              label="Tecido"
-              placeholder="Dry Fit 100% Poliéster"
-              className="col-span-2"
-            />
-            <Input
-              label="Preço de Venda"
-              type="number"
-              placeholder="89.90"
-              required
-            />
-            <Input label="Custo" type="number" placeholder="32.00" required />
-            <Input label="Estoque inicial" type="number" placeholder="0" />
-            <Input
-              label="Tamanhos (sep. por vírgula)"
-              placeholder="PP,P,M,G,GG"
-            />
-            <Input
-              label="URL da Imagem"
-              placeholder="https://exemplo.com/imagem.jpg"
-              className="col-span-2"
-            />
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Nome do produto *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={newProduct.name}
+                onChange={handleInputChange}
+                placeholder="Ex: Camisa Manga Curta"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Código *
+              </label>
+              <input
+                type="text"
+                name="code"
+                value={newProduct.code}
+                onChange={handleInputChange}
+                placeholder="AGH-000"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Categoria
+              </label>
+              <select
+                name="category"
+                value={newProduct.category}
+                onChange={handleInputChange}
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              >
+                {categories
+                  .filter((c) => c !== "Todas")
+                  .map((cat) => (
+                    <option key={cat} value={cat} className="bg-[#0a0a0a]">
+                      {cat}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Tecido
+              </label>
+              <input
+                type="text"
+                name="fabric"
+                value={newProduct.fabric}
+                onChange={handleInputChange}
+                placeholder="Dry Fit 100% Poliéster"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Preço de Venda *
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={newProduct.price}
+                onChange={handleInputChange}
+                placeholder="89.90"
+                step="0.01"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Custo *
+              </label>
+              <input
+                type="number"
+                name="cost"
+                value={newProduct.cost}
+                onChange={handleInputChange}
+                placeholder="32.00"
+                step="0.01"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Estoque inicial
+              </label>
+              <input
+                type="number"
+                name="stock"
+                value={newProduct.stock}
+                onChange={handleInputChange}
+                placeholder="0"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Tamanhos (sep. por vírgula)
+              </label>
+              <input
+                type="text"
+                name="sizes"
+                value={newProduct.sizes}
+                onChange={handleInputChange}
+                placeholder="PP,P,M,G,GG"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Cores (sep. por vírgula)
+              </label>
+              <input
+                type="text"
+                name="colors"
+                value={newProduct.colors}
+                onChange={handleInputChange}
+                placeholder="Branco, Preto, Azul"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                URL da Imagem
+              </label>
+              <input
+                type="text"
+                name="image"
+                value={newProduct.image}
+                onChange={handleInputChange}
+                placeholder="https://exemplo.com/imagem.jpg"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div className="col-span-2 flex items-center gap-3">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Personalizável
+              </label>
+              <input
+                type="checkbox"
+                name="customizable"
+                checked={newProduct.customizable}
+                onChange={handleInputChange}
+                className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#D4AF37] focus:ring-[#D4AF37]/50"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Status
+              </label>
+              <select
+                name="status"
+                value={newProduct.status}
+                onChange={handleInputChange}
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              >
+                {statusOptions.map((s) => (
+                  <option key={s} value={s} className="bg-[#0a0a0a]">
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {validationError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2">
+              <X size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-400">{validationError}</span>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center gap-2">
+              <Check size={16} className="text-emerald-400 flex-shrink-0" />
+              <span className="text-sm text-emerald-400">{successMessage}</span>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowModal(false);
+                setNewProduct({
+                  name: "",
+                  code: "",
+                  category: "Camisas",
+                  fabric: "",
+                  price: "",
+                  cost: "",
+                  stock: "",
+                  sizes: "",
+                  colors: "",
+                  image: "",
+                  customizable: false,
+                  status: "Ativo",
+                });
+                setValidationError("");
+                setSuccessMessage("");
+              }}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateProduct}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Criar Produto"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL DE EDIÇÃO DE PRODUTO ───────────────────── */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingProduct({
+            id: null,
+            name: "",
+            code: "",
+            category: "Camisas",
+            fabric: "",
+            price: "",
+            cost: "",
+            stock: "",
+            sizes: "",
+            colors: "",
+            image: "",
+            customizable: false,
+            status: "Ativo",
+          });
+          setValidationError("");
+          setSuccessMessage("");
+        }}
+        title="Editar Produto"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Nome do produto *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={editingProduct.name}
+                onChange={handleEditInputChange}
+                placeholder="Ex: Camisa Manga Curta"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Código *
+              </label>
+              <input
+                type="text"
+                name="code"
+                value={editingProduct.code}
+                onChange={handleEditInputChange}
+                placeholder="AGH-000"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Categoria
+              </label>
+              <select
+                name="category"
+                value={editingProduct.category}
+                onChange={handleEditInputChange}
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              >
+                {categories
+                  .filter((c) => c !== "Todas")
+                  .map((cat) => (
+                    <option key={cat} value={cat} className="bg-[#0a0a0a]">
+                      {cat}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Tecido
+              </label>
+              <input
+                type="text"
+                name="fabric"
+                value={editingProduct.fabric}
+                onChange={handleEditInputChange}
+                placeholder="Dry Fit 100% Poliéster"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Preço de Venda *
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={editingProduct.price}
+                onChange={handleEditInputChange}
+                placeholder="89.90"
+                step="0.01"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Custo *
+              </label>
+              <input
+                type="number"
+                name="cost"
+                value={editingProduct.cost}
+                onChange={handleEditInputChange}
+                placeholder="32.00"
+                step="0.01"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Estoque
+              </label>
+              <input
+                type="number"
+                name="stock"
+                value={editingProduct.stock}
+                onChange={handleEditInputChange}
+                placeholder="0"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Tamanhos (sep. por vírgula)
+              </label>
+              <input
+                type="text"
+                name="sizes"
+                value={editingProduct.sizes}
+                onChange={handleEditInputChange}
+                placeholder="PP,P,M,G,GG"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Cores (sep. por vírgula)
+              </label>
+              <input
+                type="text"
+                name="colors"
+                value={editingProduct.colors}
+                onChange={handleEditInputChange}
+                placeholder="Branco, Preto, Azul"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                URL da Imagem
+              </label>
+              <input
+                type="text"
+                name="image"
+                value={editingProduct.image}
+                onChange={handleEditInputChange}
+                placeholder="https://exemplo.com/imagem.jpg"
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              />
+            </div>
+            <div className="col-span-2 flex items-center gap-3">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Personalizável
+              </label>
+              <input
+                type="checkbox"
+                name="customizable"
+                checked={editingProduct.customizable}
+                onChange={handleEditInputChange}
+                className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#D4AF37] focus:ring-[#D4AF37]/50"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                Status
+              </label>
+              <select
+                name="status"
+                value={editingProduct.status}
+                onChange={handleEditInputChange}
+                className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 focus:border-[#D4AF37]/50 transition-colors outline-none"
+              >
+                {statusOptions.map((s) => (
+                  <option key={s} value={s} className="bg-[#0a0a0a]">
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {validationError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2">
+              <X size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-400">{validationError}</span>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center gap-2">
+              <Check size={16} className="text-emerald-400 flex-shrink-0" />
+              <span className="text-sm text-emerald-400">{successMessage}</span>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowEditModal(false);
+                setEditingProduct({
+                  id: null,
+                  name: "",
+                  code: "",
+                  category: "Camisas",
+                  fabric: "",
+                  price: "",
+                  cost: "",
+                  stock: "",
+                  sizes: "",
+                  colors: "",
+                  image: "",
+                  customizable: false,
+                  status: "Ativo",
+                });
+                setValidationError("");
+                setSuccessMessage("");
+              }}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Atualizar Produto"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL DE CONFIRMAÇÃO DE EXCLUSÃO ────────────── */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={cancelDelete}
+        title="Confirmar Exclusão"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500/40 flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={28} className="text-red-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Tem certeza?
+            </h3>
+            <p className="text-sm text-slate-400">
+              Você está prestes a excluir o produto <br />
+              <span className="text-white font-semibold">
+                "{productToDelete?.name}"
+              </span>
+            </p>
+            <p className="text-xs text-slate-500 mt-2">
+              Esta ação não pode ser desfeita.
+            </p>
           </div>
           <div className="flex gap-3 pt-2">
             <Button
               variant="secondary"
-              onClick={() => setShowModal(false)}
+              onClick={cancelDelete}
               className="flex-1"
             >
               Cancelar
             </Button>
-            <Button className="flex-1">Criar Produto</Button>
+            <Button
+              onClick={confirmDelete}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+            >
+              Excluir
+            </Button>
           </div>
         </div>
       </Modal>

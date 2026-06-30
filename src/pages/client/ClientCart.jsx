@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -48,8 +48,8 @@ function PaymentModal({
   const pixQrCode =
     "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=agah@agahsports.com.br";
 
-  // Contador regressivo
-  useState(() => {
+  // ✅ CONTADOR REGRESSIVO - CORRIGIDO COM useEffect
+  useEffect(() => {
     if (showPix && timeLeft > 0) {
       const timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
@@ -67,7 +67,7 @@ function PaymentModal({
 
   const handlePayment = async () => {
     if (paymentMethod === "pix") {
-      // Abre a interface PIX
+      // Abre a interface PIX e reseta o timer
       setShowPix(true);
       setTimeLeft(600);
       return;
@@ -189,19 +189,29 @@ function PaymentModal({
             )}
           </div>
 
-          {/* Timer */}
+          {/* ✅ Timer - AGORA FUNCIONANDO COM useEffect */}
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-2">
               <div
-                className={`text-2xl font-bold font-mono ${isExpired ? "text-red-400" : "text-[#D4AF37]"}`}
+                className={`text-3xl font-bold font-mono ${isExpired ? "text-red-400" : "text-[#D4AF37]"}`}
               >
                 {formatTime(timeLeft)}
               </div>
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-500 mt-1">
               {isExpired
                 ? "⏰ Tempo esgotado!"
                 : "⏱️ Tempo restante para pagamento"}
+            </div>
+            {/* ✅ Barra de progresso do tempo */}
+            <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${(timeLeft / 600) * 100}%`,
+                  background: timeLeft < 60 ? "#ef4444" : "#D4AF37",
+                }}
+              />
             </div>
           </div>
 
@@ -219,6 +229,7 @@ function PaymentModal({
               variant="secondary"
               onClick={() => {
                 setShowPix(false);
+                setTimeLeft(600);
               }}
               className="flex-1"
             >
@@ -526,7 +537,7 @@ export default function ClientCart() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Items - mesmo código de antes */}
+        {/* Items */}
         <div className="xl:col-span-2 space-y-3">
           <AnimatePresence>
             {cart.map((item) => (

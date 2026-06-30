@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -14,6 +14,7 @@ import {
   Lock,
   Shield,
   Info,
+  Copy,
 } from "lucide-react";
 import { StatusBadge, Button, Modal, Card } from "../../components/ui";
 import { events } from "../../data/mockData";
@@ -159,6 +160,9 @@ function PaymentSection({
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [loading, setLoading] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [showPix, setShowPix] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos em segundos
+  const [copied, setCopied] = useState(false);
 
   const paymentMethods = [
     { id: "pix", label: "PIX", icon: Smartphone, color: "text-green-400" },
@@ -170,7 +174,37 @@ function PaymentSection({
     },
   ];
 
+  // Chave PIX simulada
+  const pixKey = "agah@agahsports.com.br";
+  const pixQrCode =
+    "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=agah@agahsports.com.br";
+
+  // ✅ CONTADOR REGRESSIVO - CORRIGIDO COM useEffect
+  useEffect(() => {
+    if (showPix && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeLeft, showPix]);
+
+  // Formata o tempo
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const handlePayment = async () => {
+    if (paymentMethod === "pix") {
+      // Abre a interface PIX e reseta o timer
+      setShowPix(true);
+      setTimeLeft(600);
+      return;
+    }
+
+    // Para cartão de crédito
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1800));
     setLoading(false);
@@ -178,6 +212,24 @@ function PaymentSection({
     setTimeout(() => {
       onConfirm();
     }, 500);
+  };
+
+  const handleCopyPix = () => {
+    navigator.clipboard.writeText(pixKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handlePixConfirm = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setPaid(true);
+      setShowPix(false);
+      setTimeout(() => {
+        onConfirm();
+      }, 500);
+    }, 2000);
   };
 
   if (paid) {
@@ -199,6 +251,127 @@ function PaymentSection({
     );
   }
 
+  // ─── TELA PIX ──────────────────────────────────────────────
+  if (showPix) {
+    const isExpired = timeLeft <= 0;
+
+    return (
+      <div className="space-y-5">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Smartphone size={24} className="text-green-400" />
+            <h3 className="text-lg font-bold text-white">Pagar com PIX</h3>
+          </div>
+          <p className="text-sm text-slate-400">
+            Escaneie o QR Code ou copie a chave PIX
+          </p>
+        </div>
+
+        {/* QR Code */}
+        <div className="flex justify-center">
+          <div className="bg-white p-3 rounded-2xl">
+            <img src={pixQrCode} alt="QR Code PIX" className="w-48 h-48" />
+          </div>
+        </div>
+
+        {/* Chave PIX */}
+        <div className="glass-light rounded-xl p-3">
+          <div className="text-xs text-slate-400 mb-1">Chave PIX (E-mail)</div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-white font-mono flex-1 truncate">
+              {pixKey}
+            </span>
+            <button
+              onClick={handleCopyPix}
+              className="p-1.5 rounded-lg glass-light text-slate-400 hover:text-white transition-colors"
+            >
+              {copied ? (
+                <Check size={16} className="text-emerald-400" />
+              ) : (
+                <Copy size={16} />
+              )}
+            </button>
+          </div>
+          {copied && (
+            <div className="text-xs text-emerald-400 mt-1">✓ Copiado!</div>
+          )}
+        </div>
+
+        {/* Timer - AGORA FUNCIONANDO */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2">
+            <div
+              className={`text-3xl font-bold font-mono ${isExpired ? "text-red-400" : "text-[#D4AF37]"}`}
+            >
+              {formatTime(timeLeft)}
+            </div>
+          </div>
+          <div className="text-xs text-slate-500 mt-1">
+            {isExpired
+              ? "⏰ Tempo esgotado!"
+              : "⏱️ Tempo restante para pagamento"}
+          </div>
+          {/* Barra de progresso do tempo */}
+          <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${(timeLeft / 600) * 100}%`,
+                background: timeLeft < 60 ? "#ef4444" : "#D4AF37",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Valor */}
+        <div className="glass-light rounded-xl p-3 text-center">
+          <div className="text-xs text-slate-400">Valor a pagar</div>
+          <div className="text-2xl font-bold text-[#D4AF37]">
+            R$ {event.price.toFixed(2)}
+          </div>
+        </div>
+
+        {/* Botões */}
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowPix(false);
+              setTimeLeft(600);
+            }}
+            className="flex-1"
+          >
+            Voltar
+          </Button>
+          <Button
+            onClick={handlePixConfirm}
+            disabled={loading || isExpired}
+            className="flex-1"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Confirmando...
+              </>
+            ) : isExpired ? (
+              "Tempo Esgotado"
+            ) : (
+              "Confirmar Pagamento"
+            )}
+          </Button>
+        </div>
+
+        {isExpired && (
+          <div className="text-center text-xs text-red-400">
+            O tempo para pagamento expirou. Clique em "Voltar" e tente
+            novamente.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── TELA PRINCIPAL DE PAGAMENTO ──────────────────────────
   return (
     <div className="space-y-5">
       <div className="glass-light rounded-xl p-4 space-y-2 border border-white/8">
@@ -596,11 +769,10 @@ export default function ClientEvents() {
         ))}
       </div>
 
-      {/* Event detail modal com pagamento - TÍTULO CORRIGIDO E BOTÃO FECHAR FUNCIONANDO */}
+      {/* Event detail modal com pagamento */}
       <Modal
         isOpen={!!selected}
         onClose={() => {
-          // Fecha o modal independente da etapa
           setSelected(null);
           setStep("details");
           setSelectedDistance("");
@@ -638,6 +810,7 @@ export default function ClientEvents() {
                 selectedSize={selectedSize}
               />
             ) : (
+              // Detalhes do evento
               <>
                 <div className="glass-light rounded-xl overflow-hidden">
                   <div
