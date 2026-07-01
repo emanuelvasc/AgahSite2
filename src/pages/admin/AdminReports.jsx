@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { PageHeader, Button, Card, Select } from "../../components/ui";
 import { revenueChartData, products } from "../../data/mockData";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 function BarChart({
   data,
@@ -93,9 +95,134 @@ const categoryData = [
 
 export default function AdminReports() {
   const [period, setPeriod] = useState("month");
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef(null);
+
+  const periodLabels = {
+    week: "Esta semana",
+    month: "Este mês",
+    quarter: "Trimestre",
+    year: "Este ano",
+  };
+
+  // ✅ FUNÇÃO PARA EXPORTAR PDF
+  const handleExportPDF = () => {
+    setIsExporting(true);
+
+    try {
+      const doc = new jsPDF("p", "mm", "a4");
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+
+      // Cabeçalho
+      doc.setFontSize(20);
+      doc.setTextColor("#D4AF37");
+      doc.text("AGAH - Relatório de Vendas", pageWidth / 2, 25, {
+        align: "center",
+      });
+
+      doc.setFontSize(10);
+      doc.setTextColor("#666666");
+      doc.text(`Período: ${periodLabels[period]}`, pageWidth / 2, 35, {
+        align: "center",
+      });
+      doc.text(
+        `Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`,
+        pageWidth / 2,
+        40,
+        { align: "center" },
+      );
+
+      // Linha divisória
+      doc.setDrawColor("#D4AF37");
+      doc.line(margin, 45, pageWidth - margin, 45);
+
+      // KPIs
+      doc.setFontSize(12);
+      doc.setTextColor("#FFFFFF");
+      const kpis = [
+        { label: "Receita Total", value: "R$ 48,7k" },
+        { label: "Pedidos", value: "127" },
+        { label: "Novos Clientes", value: "27" },
+        { label: "Ticket Médio", value: "R$ 383" },
+      ];
+
+      let yPos = 55;
+      kpis.forEach((kpi, index) => {
+        const xPos = margin + index * 45;
+        doc.setFontSize(10);
+        doc.setTextColor("#999999");
+        doc.text(kpi.label, xPos, yPos);
+        doc.setFontSize(14);
+        doc.setTextColor("#D4AF37");
+        doc.text(kpi.value, xPos, yPos + 7);
+      });
+
+      // Tabela de produtos mais vendidos
+      yPos = 85;
+      doc.setFontSize(12);
+      doc.setTextColor("#D4AF37");
+      doc.text("Produtos Mais Vendidos", margin, yPos);
+
+      const tableData = topProducts.map((p, i) => [
+        `${i + 1}º`,
+        p.name,
+        `${p.sold} un.`,
+        `R$ ${(p.revenue / 1000).toFixed(1)}k`,
+      ]);
+
+      doc.autoTable({
+        startY: yPos + 5,
+        head: [["#", "Produto", "Vendidos", "Receita"]],
+        body: tableData,
+        theme: "dark",
+        headStyles: {
+          fillColor: [212, 175, 55],
+          textColor: [0, 0, 0],
+          fontSize: 9,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [200, 200, 200],
+        },
+        alternateRowStyles: {
+          fillColor: [30, 30, 30],
+        },
+        styles: {
+          cellPadding: 4,
+        },
+        columnStyles: {
+          0: { cellWidth: 15 },
+          1: { cellWidth: 70 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 35 },
+        },
+      });
+
+      // Resumo
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(10);
+      doc.setTextColor("#666666");
+      doc.text(
+        "Relatório gerado automaticamente pelo sistema AGAH.",
+        pageWidth / 2,
+        finalY,
+        { align: "center" },
+      );
+
+      // Salvar PDF
+      doc.save(`relatorio_agah_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Erro ao gerar PDF. Tente novamente.");
+    }
+
+    setIsExporting(false);
+  };
 
   return (
-    <div>
+    <div ref={reportRef}>
       <PageHeader
         title="Relatórios"
         subtitle="Análise de desempenho e métricas do negócio"
@@ -112,8 +239,21 @@ export default function AdminReports() {
               ]}
               className="w-36"
             />
-            <Button variant="secondary" icon={Download} size="sm">
-              Exportar
+            <Button
+              variant="secondary"
+              icon={Download}
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                "Exportar PDF"
+              )}
             </Button>
           </div>
         }

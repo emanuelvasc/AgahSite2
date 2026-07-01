@@ -35,8 +35,6 @@ const ALL_STATUS = [
   "Cancelado",
 ];
 
-const STATUS_OPTIONS = ["Em Produção", "Enviado", "Entregue", "Cancelado"];
-
 export default function AdminOrders() {
   const { orders, addOrder, updateOrderStatus, updateOrder } = useApp();
   const [search, setSearch] = useState("");
@@ -67,9 +65,6 @@ export default function AdminOrders() {
     status: "",
   });
 
-  // Estado para status selecionado no modal de detalhes
-  const [selectedStatus, setSelectedStatus] = useState("");
-
   const filtered = orders.filter((o) => {
     const matchSearch =
       o.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,12 +73,9 @@ export default function AdminOrders() {
     return matchSearch && matchStatus;
   });
 
-  const totalRevenue = filtered.reduce((a, o) => a + o.total, 0);
-
   // ─── FUNÇÃO PARA ABRIR MODAL DE DETALHES ──────────────────
   const handleOpenDetails = (order) => {
     setSelected(order);
-    setSelectedStatus(order.status);
     setSuccessMessage("");
   };
 
@@ -115,41 +107,37 @@ export default function AdminOrders() {
 
     setIsSaving(true);
 
+    const updatedOrder = {
+      client: editingOrder.client.trim(),
+      items: parseInt(editingOrder.items) || 1,
+      total: parseFloat(editingOrder.total),
+      payment: editingOrder.payment,
+      status: editingOrder.status,
+      date: selected?.date || new Date().toISOString(),
+    };
+
+    updateOrder(editingOrder.id, updatedOrder);
+
+    if (selected && selected.id === editingOrder.id) {
+      setSelected({ ...selected, ...updatedOrder });
+    }
+
+    setValidationError("");
+    setSuccessMessage("✅ Pedido atualizado com sucesso!");
+    setIsSaving(false);
+
     setTimeout(() => {
-      const updatedOrder = {
-        client: editingOrder.client.trim(),
-        items: parseInt(editingOrder.items) || 1,
-        total: parseFloat(editingOrder.total),
-        payment: editingOrder.payment,
-        status: editingOrder.status,
-        date: selected?.date || new Date().toISOString(),
-      };
-
-      updateOrder(editingOrder.id, updatedOrder);
-
-      // Atualiza o pedido selecionado se estiver aberto
-      if (selected && selected.id === editingOrder.id) {
-        setSelected({ ...selected, ...updatedOrder });
-        setSelectedStatus(editingOrder.status);
-      }
-
-      setValidationError("");
-      setSuccessMessage("✅ Pedido atualizado com sucesso!");
-      setIsSaving(false);
-
-      setTimeout(() => {
-        setShowEditModal(false);
-        setSuccessMessage("");
-        setEditingOrder({
-          id: "",
-          client: "",
-          items: 1,
-          total: 0,
-          payment: "",
-          status: "",
-        });
-      }, 1000);
-    }, 500);
+      setShowEditModal(false);
+      setSuccessMessage("");
+      setEditingOrder({
+        id: "",
+        client: "",
+        items: 1,
+        total: 0,
+        payment: "",
+        status: "",
+      });
+    }, 1000);
   };
 
   // ─── FUNÇÃO PARA CRIAR NOVO PEDIDO ──────────────────────
@@ -165,70 +153,43 @@ export default function AdminOrders() {
 
     setIsSaving(true);
 
+    const maxId = orders.reduce((max, o) => {
+      const num = parseInt(o.id.replace("PED-2025-", ""));
+      return Math.max(max, num);
+    }, 0);
+
+    const orderToAdd = {
+      id: `PED-2025-${String(maxId + 1).padStart(3, "0")}`,
+      client: newOrder.client.trim(),
+      items: newOrder.items || 1,
+      total: parseFloat(newOrder.total),
+      payment: newOrder.payment,
+      status: newOrder.status,
+      date: new Date().toISOString(),
+    };
+
+    addOrder(orderToAdd);
+
+    setNewOrder({
+      client: "",
+      items: 1,
+      total: 0,
+      payment: "Pix",
+      status: "Pendente",
+    });
+    setValidationError("");
+    setSuccessMessage("✅ Pedido criado com sucesso!");
+    setIsSaving(false);
+
     setTimeout(() => {
-      const maxId = orders.reduce((max, o) => {
-        const num = parseInt(o.id.replace("PED-2025-", ""));
-        return Math.max(max, num);
-      }, 0);
-
-      const orderToAdd = {
-        id: `PED-2025-${String(maxId + 1).padStart(3, "0")}`,
-        client: newOrder.client.trim(),
-        items: newOrder.items || 1,
-        total: parseFloat(newOrder.total),
-        payment: newOrder.payment,
-        status: newOrder.status,
-        date: new Date().toISOString(),
-      };
-
-      addOrder(orderToAdd);
-
-      setNewOrder({
-        client: "",
-        items: 1,
-        total: 0,
-        payment: "Pix",
-        status: "Pendente",
-      });
-      setValidationError("");
-      setSuccessMessage("✅ Pedido criado com sucesso!");
-      setIsSaving(false);
-
-      setTimeout(() => {
-        setShowNewOrderModal(false);
-        setSuccessMessage("");
-      }, 1000);
-    }, 500);
-  };
-
-  // ─── FUNÇÃO PARA ALTERAR STATUS ──────────────────────────
-  const handleStatusChange = (newStatus) => {
-    setSelectedStatus(newStatus);
-  };
-
-  // ─── FUNÇÃO PARA SALVAR ALTERAÇÕES DE STATUS ────────────
-  const handleSaveChanges = () => {
-    if (selected && selectedStatus !== selected.status) {
-      setIsSaving(true);
-      setTimeout(() => {
-        updateOrderStatus(selected.id, selectedStatus);
-        setSuccessMessage("✅ Status atualizado com sucesso!");
-        setIsSaving(false);
-
-        setSelected({ ...selected, status: selectedStatus });
-
-        setTimeout(() => setSuccessMessage(""), 3000);
-      }, 500);
-    } else {
-      setSuccessMessage("ℹ️ Nenhuma alteração para salvar.");
-      setTimeout(() => setSuccessMessage(""), 2000);
-    }
+      setShowNewOrderModal(false);
+      setSuccessMessage("");
+    }, 1000);
   };
 
   // ─── FUNÇÃO PARA FECHAR MODAL ────────────────────────────
   const handleCloseModal = () => {
     setSelected(null);
-    setSelectedStatus("");
     setSuccessMessage("");
   };
 
@@ -412,7 +373,6 @@ export default function AdminOrders() {
       >
         {selected && (
           <div className="space-y-4">
-            {/* Mensagem de sucesso */}
             {successMessage && (
               <div
                 className={`p-3 rounded-xl flex items-center gap-2 ${
@@ -460,27 +420,7 @@ export default function AdminOrders() {
               ))}
             </div>
 
-            {/* ALTERAR STATUS */}
-            <div>
-              <div className="text-xs text-slate-500 mb-2 uppercase tracking-wider">
-                Alterar Status
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {STATUS_OPTIONS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleStatusChange(s)}
-                    className={`text-xs px-3 py-1.5 rounded-lg transition-all ${
-                      selectedStatus === s
-                        ? "gradient-brand text-white"
-                        : "glass-light border border-white/8 text-slate-400 hover:text-white hover:border-[#D4AF37]/30"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* ✅ REMOVIDA A SEÇÃO "ALTERAR STATUS" */}
 
             <div className="flex gap-3 pt-2">
               <Button
@@ -490,7 +430,6 @@ export default function AdminOrders() {
               >
                 Fechar
               </Button>
-              {/* ✅ Botão Editar - Substituindo Salvar */}
               <Button
                 onClick={() => {
                   const orderToEdit = selected;
@@ -527,7 +466,6 @@ export default function AdminOrders() {
         size="md"
       >
         <div className="space-y-4">
-          {/* Mensagem de sucesso */}
           {successMessage && (
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
               <Check size={16} className="text-emerald-400 flex-shrink-0" />
@@ -535,7 +473,6 @@ export default function AdminOrders() {
             </div>
           )}
 
-          {/* Mensagem de erro */}
           {validationError && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
               <X size={16} className="text-red-400 flex-shrink-0" />

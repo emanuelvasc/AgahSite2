@@ -102,17 +102,14 @@ export function AppProvider({ children }) {
   const cartCount = cart.reduce((acc, i) => acc + i.qty, 0);
 
   // ─── CLIENTES ──────────────────────────────────────────────
-  // ✅ Função para adicionar cliente
   const addClient = (client) => {
     setClients((prev) => [...prev, client]);
   };
 
-  // ✅ Função para excluir cliente
   const deleteClient = (id) => {
     setClients((prev) => prev.filter((c) => c.id !== id));
   };
 
-  // ✅ Função para editar cliente
   const updateClient = (id, updatedData) => {
     setClients((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...updatedData } : c)),
@@ -120,17 +117,14 @@ export function AppProvider({ children }) {
   };
 
   // ─── PRODUTOS ──────────────────────────────────────────────
-  // ✅ Função para adicionar produto
   const addProduct = (product) => {
     setProducts((prev) => [...prev, product]);
   };
 
-  // ✅ Função para excluir produto
   const deleteProduct = (id) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // ✅ Função para editar produto
   const updateProduct = (id, updatedData) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p)),
@@ -145,21 +139,40 @@ export function AppProvider({ children }) {
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
   // ─── PEDIDOS ──────────────────────────────────────────────
-  // ✅ Função para adicionar pedido
   const addOrder = (order) => {
     setOrders((prev) => [...prev, order]);
   };
 
-  // ✅ Função para atualizar status do pedido
   const updateOrderStatus = (id, status) => {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
+  const updateOrder = (id, updatedData) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, ...updatedData } : o)),
+    );
+  };
+
+  // ─── ENCOMENDAS ──────────────────────────────────────────────
+  const addCustomOrder = (order) => {
+    setCustomOrders((prev) => [...prev, order]);
+  };
+
+  const updateCustomOrder = (id, updatedData) => {
+    setCustomOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, ...updatedData } : o)),
+    );
+  };
+
+  // ─── FORNECEDORES ────────────────────────────────────────────
+  // ✅ FUNÇÃO PARA ADICIONAR FORNECEDOR
+  const addSupplier = (supplier) => {
+    setSuppliers((prev) => [...prev, supplier]);
+  };
+
   // ─── EVENTOS ──────────────────────────────────────────────
-  // ✅ Função para adicionar inscrição em evento
   const addEventRegistration = (registration) => {
     setEventRegistrations((prev) => [...prev, registration]);
-    // Atualiza o número de participantes no evento
     setEvents((prev) =>
       prev.map((e) =>
         e.id === registration.eventId
@@ -203,6 +216,14 @@ export function AppProvider({ children }) {
         // Pedidos
         addOrder,
         updateOrderStatus,
+        updateOrder,
+
+        // Encomendas
+        addCustomOrder,
+        updateCustomOrder,
+
+        // ✅ Fornecedores
+        addSupplier,
 
         // Eventos
         addEventRegistration,

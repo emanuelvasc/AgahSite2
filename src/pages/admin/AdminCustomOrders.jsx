@@ -7,6 +7,13 @@ import {
   DollarSign,
   Send,
   CheckCircle,
+  X,
+  Check,
+  FileText,
+  MessageCircle,
+  User,
+  Settings,
+  Layers,
 } from "lucide-react";
 import {
   PageHeader,
@@ -32,11 +39,47 @@ const ALL_STATUS = [
   "Cancelado",
 ];
 
+// ✅ LINHAS DE PRODUÇÃO
+const PRODUCTION_LINES = [
+  { id: "corte", name: "Corte", color: "#6366f1" },
+  { id: "costura", name: "Costura", color: "#8b5cf6" },
+  { id: "estamparia", name: "Estamparia", color: "#D4AF37" },
+  { id: "acabamento", name: "Acabamento", color: "#10b981" },
+  { id: "expedicao", name: "Expedição", color: "#84cc16" },
+];
+
 export default function AdminCustomOrders() {
-  const { customOrders } = useApp();
+  const { customOrders, addCustomOrder, updateCustomOrder, addOrder, orders } =
+    useApp();
   const [selected, setSelected] = useState(null);
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [search, setSearch] = useState("");
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [validationError, setValidationError] = useState("");
+
+  // ✅ Estados para linha de produção
+  const [showProductionLineModal, setShowProductionLineModal] = useState(false);
+  const [selectedLine, setSelectedLine] = useState("");
+
+  // Estado para nova encomenda
+  const [newOrder, setNewOrder] = useState({
+    client: "",
+    type: "",
+    quantity: 1,
+    description: "",
+    budget: "",
+    status: "Em análise",
+    productionLine: "", // ✅ Linha de produção
+  });
+
+  // Estados para modais de ações
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [budgetValue, setBudgetValue] = useState("");
 
   const filtered = customOrders.filter((o) => {
     const matchStatus = statusFilter === "Todos" || o.status === statusFilter;
@@ -46,14 +89,203 @@ export default function AdminCustomOrders() {
     return matchStatus && matchSearch;
   });
 
+  // ─── FUNÇÃO PARA CRIAR NOVA ENCOMENDA ──────────────────
+  const handleCreateOrder = () => {
+    if (!newOrder.client.trim()) {
+      setValidationError("⚠️ O campo Cliente é obrigatório.");
+      return;
+    }
+    if (!newOrder.type.trim()) {
+      setValidationError("⚠️ O campo Tipo é obrigatório.");
+      return;
+    }
+    if (!newOrder.description.trim()) {
+      setValidationError("⚠️ O campo Descrição é obrigatório.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const maxId = customOrders.reduce((max, o) => {
+      const num = parseInt(o.protocol.replace("PROT-", ""));
+      return Math.max(max, num);
+    }, 0);
+
+    const orderToAdd = {
+      id: customOrders.length + 1,
+      protocol: `PROT-${String(maxId + 1).padStart(4, "0")}`,
+      client: newOrder.client.trim(),
+      type: newOrder.type.trim(),
+      quantity: parseInt(newOrder.quantity) || 1,
+      description: newOrder.description.trim(),
+      budget: newOrder.budget ? parseFloat(newOrder.budget) : null,
+      status: newOrder.status,
+      date: new Date().toISOString(),
+      productionLine: newOrder.productionLine || "", // ✅ Salva a linha
+    };
+
+    addCustomOrder(orderToAdd);
+
+    setNewOrder({
+      client: "",
+      type: "",
+      quantity: 1,
+      description: "",
+      budget: "",
+      status: "Em análise",
+      productionLine: "",
+    });
+    setValidationError("");
+    setSuccessMessage("✅ Encomenda criada com sucesso!");
+    setIsSaving(false);
+
+    setTimeout(() => {
+      setShowNewOrderModal(false);
+      setSuccessMessage("");
+    }, 1000);
+  };
+
+  // ─── FUNÇÃO PARA APROVAR ENCOMENDA ──────────────────────
+  const handleApproveOrder = () => {
+    setIsSaving(true);
+
+    const updatedOrder = {
+      ...selected,
+      status: "Aprovado",
+    };
+
+    updateCustomOrder(selected.id, updatedOrder);
+    setSelected(updatedOrder);
+    setShowApproveModal(false);
+    setSuccessMessage("✅ Encomenda aprovada com sucesso!");
+    setIsSaving(false);
+
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  // ─── FUNÇÃO PARA SALVAR ORÇAMENTO ──────────────────────
+  const handleSaveBudget = () => {
+    if (!budgetValue || parseFloat(budgetValue) <= 0) {
+      setValidationError("⚠️ Por favor, insira um valor válido.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const updatedOrder = {
+      ...selected,
+      budget: parseFloat(budgetValue),
+    };
+
+    updateCustomOrder(selected.id, updatedOrder);
+    setSelected(updatedOrder);
+    setBudgetValue("");
+    setShowBudgetModal(false);
+    setSuccessMessage("✅ Orçamento salvo com sucesso!");
+    setIsSaving(false);
+
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  // ─── FUNÇÃO PARA ESCOLHER LINHA DE PRODUÇÃO ──────────────
+  const handleChooseProductionLine = () => {
+    if (!selectedLine) {
+      setValidationError("⚠️ Selecione uma linha de produção.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const lineName =
+      PRODUCTION_LINES.find((l) => l.id === selectedLine)?.name || selectedLine;
+
+    const updatedOrder = {
+      ...selected,
+      productionLine: selectedLine,
+      status: "Em produção",
+    };
+
+    updateCustomOrder(selected.id, updatedOrder);
+    setSelected(updatedOrder);
+    setShowProductionLineModal(false);
+    setSelectedLine("");
+    setSuccessMessage(`✅ Encomenda enviada para a linha: ${lineName}!`);
+    setIsSaving(false);
+
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  // ─── FUNÇÃO PARA ENCAMINHAR PARA PRODUÇÃO ──────────────
+  const handleSendToProduction = () => {
+    if (!selected) {
+      setValidationError("⚠️ Nenhuma encomenda selecionada.");
+      return;
+    }
+
+    // Se não tiver orçamento, abre modal para adicionar
+    if (!selected.budget) {
+      setShowBudgetModal(true);
+      return;
+    }
+
+    // ✅ Abre modal para escolher a linha de produção
+    setShowProductionLineModal(true);
+  };
+
+  // ─── FUNÇÃO PARA ENVIAR MENSAGEM (CHAT) ──────────────
+  const handleSendChatMessage = () => {
+    if (!chatMessage.trim()) {
+      setValidationError("⚠️ Digite uma mensagem para enviar ao cliente.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    setTimeout(() => {
+      setSuccessMessage(
+        `✅ Mensagem enviada para ${selected.client}: "${chatMessage}"`,
+      );
+      setChatMessage("");
+      setShowChatModal(false);
+      setIsSaving(false);
+
+      setTimeout(() => setSuccessMessage(""), 4000);
+    }, 500);
+  };
+
+  // ─── FUNÇÃO PARA O INPUT DA NOVA ENCOMENDA ──────────────
+  const handleNewOrderInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewOrder((prev) => ({ ...prev, [name]: value }));
+    if (validationError) setValidationError("");
+    if (successMessage) setSuccessMessage("");
+  };
+
+  // ─── FUNÇÃO PARA ABRIR MODAL DE ORÇAMENTO ──────────────
+  const handleOpenBudgetModal = () => {
+    setBudgetValue(selected?.budget ? selected.budget.toString() : "");
+    setShowBudgetModal(true);
+  };
+
+  // ─── FUNÇÃO PARA ABRIR MODAL DE LINHA DE PRODUÇÃO ──────
+  const handleOpenProductionLineModal = () => {
+    setSelectedLine(selected?.productionLine || "");
+    setShowProductionLineModal(true);
+  };
+
   return (
     <div>
       <PageHeader
         title="Encomendas"
         subtitle="Pedidos personalizados e produção sob demanda"
-        actions={<Button icon={Plus}>Nova Encomenda</Button>}
+        actions={
+          <Button icon={Plus} onClick={() => setShowNewOrderModal(true)}>
+            Nova Encomenda
+          </Button>
+        }
       />
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total", value: customOrders.length, color: "text-white" },
@@ -85,12 +317,17 @@ export default function AdminCustomOrders() {
         ))}
       </div>
 
+      {/* Status filter */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {ALL_STATUS.map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${statusFilter === s ? "gradient-brand text-white" : "glass-light text-slate-400 border border-white/8"}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+              statusFilter === s
+                ? "gradient-brand text-white"
+                : "glass-light text-slate-400 border border-white/8"
+            }`}
           >
             {s}
           </button>
@@ -115,6 +352,7 @@ export default function AdminCustomOrders() {
             "Qtd.",
             "Orçamento",
             "Status",
+            "Linha", // ✅ Nova coluna
             "Data",
             "",
           ]}
@@ -164,11 +402,29 @@ export default function AdminCustomOrders() {
               <TableCell>
                 <StatusBadge status={enc.status} />
               </TableCell>
+              <TableCell>
+                {enc.productionLine ? (
+                  <span className="text-xs px-2 py-1 rounded-lg bg-[#D4AF37]/10 text-[#D4AF37]">
+                    {PRODUCTION_LINES.find((l) => l.id === enc.productionLine)
+                      ?.name || enc.productionLine}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-600">-</span>
+                )}
+              </TableCell>
               <TableCell className="text-slate-500 text-xs">
                 {new Date(enc.date).toLocaleDateString("pt-BR")}
               </TableCell>
               <TableCell>
-                <Button variant="ghost" size="sm" icon={Eye} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Eye}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelected(enc);
+                  }}
+                />
               </TableCell>
             </motion.tr>
           ))}
@@ -184,15 +440,37 @@ export default function AdminCustomOrders() {
         )}
       </div>
 
-      {/* Detail Modal */}
+      {/* ─── MODAL DE DETALHES DA ENCOMENDA ────────────────── */}
       <Modal
         isOpen={!!selected}
-        onClose={() => setSelected(null)}
+        onClose={() => {
+          setSelected(null);
+          setSuccessMessage("");
+          setValidationError("");
+        }}
         title="Detalhes da Encomenda"
         size="lg"
       >
         {selected && (
           <div className="space-y-5">
+            {/* Mensagem de sucesso */}
+            {successMessage && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
+                <Check size={16} className="text-emerald-400 flex-shrink-0" />
+                <span className="text-sm text-emerald-400">
+                  {successMessage}
+                </span>
+              </div>
+            )}
+
+            {/* Mensagem de erro */}
+            {validationError && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+                <X size={16} className="text-red-400 flex-shrink-0" />
+                <span className="text-sm text-red-400">{validationError}</span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-mono text-[#D4AF37] text-sm font-semibold mb-1">
@@ -213,6 +491,15 @@ export default function AdminCustomOrders() {
                   label: "Data da Solicitação",
                   value: new Date(selected.date).toLocaleDateString("pt-BR"),
                 },
+                // ✅ Exibe a linha de produção
+                {
+                  label: "Linha de Produção",
+                  value: selected.productionLine
+                    ? PRODUCTION_LINES.find(
+                        (l) => l.id === selected.productionLine,
+                      )?.name || selected.productionLine
+                    : "Não definida",
+                },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between">
                   <span className="text-sm text-slate-500">{item.label}</span>
@@ -232,54 +519,595 @@ export default function AdminCustomOrders() {
               </p>
             </div>
 
-            {selected.budget && (
-              <div className="glass-light rounded-xl p-4 border border-emerald-500/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <DollarSign size={14} className="text-emerald-400" />
-                  <span className="text-xs text-emerald-400 uppercase tracking-wider font-semibold">
+            {/* Orçamento */}
+            <div className="glass-light rounded-xl p-4 border border-[#D4AF37]/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign size={14} className="text-[#D4AF37]" />
+                  <span className="text-xs text-[#D4AF37] uppercase tracking-wider font-semibold">
                     Orçamento
                   </span>
                 </div>
-                <div className="text-2xl font-bold font-display text-emerald-400">
-                  R${" "}
-                  {selected.budget.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                  })}
-                </div>
+                <button
+                  onClick={handleOpenBudgetModal}
+                  className="text-xs text-[#D4AF37] hover:text-[#e8c970] transition-colors flex items-center gap-1"
+                >
+                  <FileText size={12} />
+                  {selected.budget ? "Editar" : "Adicionar"}
+                </button>
               </div>
-            )}
+              <div className="text-2xl font-bold font-display text-[#D4AF37] mt-1">
+                {selected.budget ? (
+                  `R$ ${selected.budget.toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                  })}`
+                ) : (
+                  <span className="text-sm text-slate-500 font-normal">
+                    Nenhum orçamento definido
+                  </span>
+                )}
+              </div>
+            </div>
 
+            {/* AÇÕES RÁPIDAS */}
             <div>
               <div className="text-xs text-slate-500 mb-2 uppercase tracking-wider">
                 Ações Rápidas
               </div>
               <div className="flex gap-2 flex-wrap">
-                {!selected.budget && (
-                  <Button icon={DollarSign} size="sm">
-                    Enviar Orçamento
-                  </Button>
-                )}
-                <Button variant="secondary" icon={Send} size="sm">
-                  Responder Cliente
+                <Button
+                  variant="secondary"
+                  icon={MessageCircle}
+                  size="sm"
+                  onClick={() => setShowChatModal(true)}
+                >
+                  Enviar Mensagem
                 </Button>
-                <Button variant="secondary" icon={CheckCircle} size="sm">
-                  Aprovar
-                </Button>
+
+                {selected.status !== "Aprovado" &&
+                  selected.status !== "Em produção" &&
+                  selected.status !== "Finalizado" && (
+                    <Button
+                      variant="secondary"
+                      icon={CheckCircle}
+                      size="sm"
+                      onClick={() => setShowApproveModal(true)}
+                    >
+                      Aprovar
+                    </Button>
+                  )}
+
+                {/* ✅ Botão para escolher linha de produção */}
+                {selected.status !== "Em produção" &&
+                  selected.status !== "Finalizado" && (
+                    <Button
+                      variant="secondary"
+                      icon={Layers}
+                      size="sm"
+                      onClick={handleOpenProductionLineModal}
+                    >
+                      Linha de Produção
+                    </Button>
+                  )}
               </div>
             </div>
 
+            {/* Botões inferiores */}
             <div className="flex gap-3 pt-2">
               <Button
                 variant="secondary"
-                onClick={() => setSelected(null)}
+                onClick={() => {
+                  setSelected(null);
+                  setSuccessMessage("");
+                  setValidationError("");
+                }}
                 className="flex-1"
               >
                 Fechar
               </Button>
-              <Button className="flex-1">Encaminhar para Produção</Button>
+              {selected.status !== "Em produção" &&
+                selected.status !== "Finalizado" && (
+                  <Button
+                    className="flex-1"
+                    icon={FileText}
+                    onClick={handleSendToProduction}
+                  >
+                    Encaminhar para Produção
+                  </Button>
+                )}
+              {selected.status === "Em produção" && (
+                <Button className="flex-1" disabled>
+                  Em produção
+                </Button>
+              )}
+              {selected.status === "Finalizado" && (
+                <Button className="flex-1" disabled>
+                  Finalizado
+                </Button>
+              )}
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ─── MODAL DE ORÇAMENTO ───────────────────────────── */}
+      <Modal
+        isOpen={showBudgetModal}
+        onClose={() => {
+          setShowBudgetModal(false);
+          setBudgetValue("");
+          setValidationError("");
+        }}
+        title={selected?.budget ? "Editar Orçamento" : "Adicionar Orçamento"}
+        size="sm"
+      >
+        <div className="space-y-4">
+          {validationError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+              <X size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-400">{validationError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Valor do Orçamento
+            </label>
+            <input
+              type="number"
+              value={budgetValue}
+              onChange={(e) => setBudgetValue(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            />
+            <p className="text-xs text-slate-500 mt-1.5">
+              Defina o valor do orçamento para esta encomenda.
+            </p>
+          </div>
+
+          {selected && (
+            <div className="glass-light rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <User size={12} className="text-[#D4AF37]" />
+                <span>Protocolo: {selected.protocol}</span>
+                <span className="text-slate-600">•</span>
+                <span>{selected.client}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowBudgetModal(false);
+                setBudgetValue("");
+                setValidationError("");
+              }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveBudget}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Orçamento"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL DE LINHA DE PRODUÇÃO ───────────────────── */}
+      <Modal
+        isOpen={showProductionLineModal}
+        onClose={() => {
+          setShowProductionLineModal(false);
+          setSelectedLine("");
+          setValidationError("");
+        }}
+        title="Escolher Linha de Produção"
+        size="sm"
+      >
+        <div className="space-y-4">
+          {validationError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+              <X size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-400">{validationError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Selecione a Linha de Produção
+            </label>
+            <div className="space-y-2">
+              {PRODUCTION_LINES.map((line) => (
+                <button
+                  key={line.id}
+                  onClick={() => setSelectedLine(line.id)}
+                  className={`w-full p-3 rounded-xl text-left transition-all border-2 flex items-center gap-3 ${
+                    selectedLine === line.id
+                      ? "border-[#D4AF37] bg-[#D4AF37]/10"
+                      : "border-white/10 hover:border-white/20 glass-light"
+                  }`}
+                >
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ background: line.color }}
+                  />
+                  <span className="text-sm text-white font-medium">
+                    {line.name}
+                  </span>
+                  {selectedLine === line.id && (
+                    <Check size={16} className="ml-auto text-[#D4AF37]" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              A linha selecionada será exibida na página de produção.
+            </p>
+          </div>
+
+          {selected && (
+            <div className="glass-light rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <User size={12} className="text-[#D4AF37]" />
+                <span>Protocolo: {selected.protocol}</span>
+                <span className="text-slate-600">•</span>
+                <span>{selected.client}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowProductionLineModal(false);
+                setSelectedLine("");
+                setValidationError("");
+              }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleChooseProductionLine}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Confirmar Linha"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL DE APROVAÇÃO ───────────────────────────── */}
+      <Modal
+        isOpen={showApproveModal}
+        onClose={() => setShowApproveModal(false)}
+        title="Aprovar Encomenda"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={28} className="text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Confirmar Aprovação
+            </h3>
+            <p className="text-sm text-slate-400">
+              Você está prestes a aprovar a encomenda <br />
+              <span className="text-white font-semibold">
+                "{selected?.protocol}"
+              </span>
+            </p>
+            <p className="text-xs text-slate-500 mt-2">
+              O cliente será notificado sobre a aprovação.
+            </p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowApproveModal(false)}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleApproveOrder} className="flex-1">
+              Confirmar Aprovação
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL DE CHAT (ENVIAR MENSAGEM) ────────────── */}
+      <Modal
+        isOpen={showChatModal}
+        onClose={() => {
+          setShowChatModal(false);
+          setChatMessage("");
+          setValidationError("");
+        }}
+        title={`Enviar Mensagem para ${selected?.client || "Cliente"}`}
+        size="md"
+      >
+        <div className="space-y-4">
+          {validationError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+              <X size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-400">{validationError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Mensagem para o cliente
+            </label>
+            <textarea
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
+              placeholder={`Digite sua mensagem para ${selected?.client}...`}
+              rows="5"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none resize-none"
+            />
+            <p className="text-xs text-slate-500 mt-1.5">
+              A mensagem será enviada diretamente ao cliente.
+            </p>
+          </div>
+
+          {selected && (
+            <div className="glass-light rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <User size={12} className="text-[#D4AF37]" />
+                <span>Protocolo: {selected.protocol}</span>
+                <span className="text-slate-600">•</span>
+                <span>{selected.type}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowChatModal(false);
+                setChatMessage("");
+                setValidationError("");
+              }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendChatMessage}
+              className="flex-1"
+              icon={Send}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                "Enviar Mensagem"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL DE NOVA ENCOMENDA ───────────────────────── */}
+      <Modal
+        isOpen={showNewOrderModal}
+        onClose={() => {
+          setShowNewOrderModal(false);
+          setNewOrder({
+            client: "",
+            type: "",
+            quantity: 1,
+            description: "",
+            budget: "",
+            status: "Em análise",
+            productionLine: "",
+          });
+          setValidationError("");
+          setSuccessMessage("");
+        }}
+        title="Nova Encomenda"
+        size="lg"
+      >
+        <div className="space-y-4">
+          {successMessage && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
+              <Check size={16} className="text-emerald-400 flex-shrink-0" />
+              <span className="text-sm text-emerald-400">{successMessage}</span>
+            </div>
+          )}
+
+          {validationError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+              <X size={16} className="text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-400">{validationError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Cliente *
+            </label>
+            <input
+              type="text"
+              name="client"
+              value={newOrder.client}
+              onChange={handleNewOrderInputChange}
+              placeholder="Nome do cliente"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Tipo do Produto *
+            </label>
+            <input
+              type="text"
+              name="type"
+              value={newOrder.type}
+              onChange={handleNewOrderInputChange}
+              placeholder="Ex: Uniforme Esportivo, Camisa Personalizada"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Quantidade
+            </label>
+            <input
+              type="number"
+              name="quantity"
+              value={newOrder.quantity}
+              onChange={handleNewOrderInputChange}
+              placeholder="1"
+              min="1"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Descrição *
+            </label>
+            <textarea
+              name="description"
+              value={newOrder.description}
+              onChange={handleNewOrderInputChange}
+              placeholder="Descreva os detalhes do produto personalizado..."
+              rows="4"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Orçamento Sugerido (opcional)
+            </label>
+            <input
+              type="number"
+              name="budget"
+              value={newOrder.budget}
+              onChange={handleNewOrderInputChange}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Status Inicial
+            </label>
+            <select
+              name="status"
+              value={newOrder.status}
+              onChange={handleNewOrderInputChange}
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            >
+              <option value="Em análise" className="bg-[#0a0a0a]">
+                Em análise
+              </option>
+              <option value="Orçamento enviado" className="bg-[#0a0a0a]">
+                Orçamento enviado
+              </option>
+              <option value="Aguardando aprovação" className="bg-[#0a0a0a]">
+                Aguardando aprovação
+              </option>
+            </select>
+          </div>
+
+          {/* ✅ Seleção de linha de produção na criação */}
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Linha de Produção (opcional)
+            </label>
+            <select
+              name="productionLine"
+              value={newOrder.productionLine}
+              onChange={handleNewOrderInputChange}
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            >
+              <option value="" className="bg-[#0a0a0a]">
+                Não definida
+              </option>
+              {PRODUCTION_LINES.map((line) => (
+                <option key={line.id} value={line.id} className="bg-[#0a0a0a]">
+                  {line.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowNewOrderModal(false);
+                setNewOrder({
+                  client: "",
+                  type: "",
+                  quantity: 1,
+                  description: "",
+                  budget: "",
+                  status: "Em análise",
+                  productionLine: "",
+                });
+                setValidationError("");
+                setSuccessMessage("");
+              }}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateOrder}
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Criar Encomenda"
+              )}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
