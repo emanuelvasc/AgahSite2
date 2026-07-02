@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { AppProvider } from "./context/AppContext";
@@ -35,7 +36,6 @@ import ClientEvents from "./pages/client/ClientEvents";
 import ClientRegistrations from "./pages/client/ClientRegistrations";
 import ClientAttendance from "./pages/client/ClientAttendance";
 import {
-  // ❌ ClientProfile REMOVIDO
   ClientSettings,
   ClientAbout,
   ClientContact,
@@ -265,7 +265,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* ❌ ROTA /cliente/perfil REMOVIDA */}
             <Route
               path="/cliente/configuracoes"
               element={

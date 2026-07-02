@@ -29,13 +29,19 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const result = login(email, password);
-    setLoading(false);
-    if (result.success) {
-      navigate(result.role === "admin" ? "/admin" : "/cliente");
-    } else {
-      setError("E-mail ou senha inválidos. Tente as credenciais demo abaixo.");
+
+    try {
+      const result = await login(email, password);
+      setLoading(false);
+
+      if (result.success) {
+        navigate(result.role === "admin" ? "/admin" : "/cliente");
+      } else {
+        setError(result.error || "E-mail ou senha inválidos.");
+      }
+    } catch (err) {
+      setLoading(false);
+      setError("Erro ao fazer login. Tente novamente.");
     }
   };
 

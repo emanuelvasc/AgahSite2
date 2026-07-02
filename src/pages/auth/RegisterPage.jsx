@@ -31,7 +31,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
-  const { login } = useAuth();
+  const { register, login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -74,18 +74,30 @@ export default function RegisterPage() {
     if (!validateForm()) return;
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setLoading(false);
-    setRegistered(true);
 
-    setTimeout(() => {
-      const result = login(form.email, form.password);
+    try {
+      // Registrar no Supabase
+      const result = await register(form.email, form.password, form.name);
+      setLoading(false);
+
       if (result.success) {
-        navigate(result.role === "admin" ? "/admin" : "/cliente");
+        setRegistered(true);
+        // Auto-login após registro
+        setTimeout(async () => {
+          const loginResult = await login(form.email, form.password);
+          if (loginResult.success) {
+            navigate(loginResult.role === "admin" ? "/admin" : "/cliente");
+          } else {
+            navigate("/login");
+          }
+        }, 2000);
       } else {
-        navigate("/login");
+        setError(result.error || "Erro ao criar conta. Tente novamente.");
       }
-    }, 2000);
+    } catch (error) {
+      setLoading(false);
+      setError("Erro ao criar conta. Tente novamente.");
+    }
   };
 
   const fillDemo = () => {
