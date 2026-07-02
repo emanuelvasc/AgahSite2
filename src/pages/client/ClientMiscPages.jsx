@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -23,8 +23,10 @@ import {
   Users,
   Star,
   Settings,
-  Palette,
   Building2,
+  X,
+  EyeOff,
+  Upload,
 } from "lucide-react";
 import { Input, Button, Card } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
@@ -80,16 +82,18 @@ export function ClientProfile() {
         <Card className="flex flex-col items-center text-center py-8">
           <div className="relative mb-5">
             <div className="w-24 h-24 gradient-brand rounded-3xl flex items-center justify-center text-white font-bold text-3xl">
-              {user?.avatar}
+              {user?.avatar || user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
             <button className="absolute -bottom-2 -right-2 w-8 h-8 glass rounded-full border border-white/15 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
               <Camera size={14} />
             </button>
           </div>
           <div className="font-bold text-white text-lg font-display">
-            {user?.name}
+            {user?.name || "Usuário"}
           </div>
-          <div className="text-sm text-slate-500 mt-1">{user?.email}</div>
+          <div className="text-sm text-slate-500 mt-1">
+            {user?.email || "usuario@email.com"}
+          </div>
           <div className="mt-3 text-xs text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 px-3 py-1 rounded-full">
             Cliente desde 2023
           </div>
@@ -202,11 +206,11 @@ function Toggle({ checked, onChange, label, description }) {
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────
+// ✅ SEM ABA DE APARÊNCIA E SEM 2FA
 const TABS = [
   { id: "perfil", label: "Perfil", icon: User },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "seguranca", label: "Segurança", icon: Shield },
-  { id: "aparencia", label: "Aparência", icon: Palette },
 ];
 
 export function ClientSettings() {
@@ -214,18 +218,105 @@ export function ClientSettings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("perfil");
   const [saved, setSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  // ─── ESTADO PERFIL ──────────────────────────────────────────
+  const [profileData, setProfileData] = useState({
+    name: user?.name || "Usuário",
+    email: user?.email || "usuario@email.com",
+    phone: "(00) 00000-0000",
+    birthDate: "",
+  });
+  const [profileImage, setProfileImage] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // ─── ESTADO SEGURANÇA ──────────────────────────────────────
+  const [passwordData, setPasswordData] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+
+  // ─── ESTADO NOTIFICAÇÕES ──────────────────────────────────
   const [notifs, setNotifs] = useState({
     orders: true,
-    promotions: false,
     events: true,
+    promotions: false,
     newsletter: false,
   });
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // ─── FUNÇÕES DE INPUT ──────────────────────────────────────
+  const handleProfileChange = (e) => {
+    const { name, value } = e.target;
+    setProfileData((prev) => ({ ...prev, [name]: value }));
+    if (saveMessage) setSaveMessage("");
   };
 
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+    setPasswordError("");
+    setPasswordSuccess("");
+  };
+
+  // ─── FUNÇÃO SALVAR ──────────────────────────────────────────
+  const handleSave = () => {
+    setSaved(true);
+    setSaveMessage("✅ Alterações salvas com sucesso!");
+    setTimeout(() => {
+      setSaved(false);
+      setSaveMessage("");
+    }, 3000);
+  };
+
+  // ─── FUNÇÃO ALTERAR SENHA ──────────────────────────────────
+  const handleChangePassword = () => {
+    if (!passwordData.current) {
+      setPasswordError("⚠️ Digite a senha atual.");
+      return;
+    }
+    if (passwordData.new.length < 6) {
+      setPasswordError("⚠️ A nova senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      setPasswordError("⚠️ As senhas não coincidem.");
+      return;
+    }
+
+    setPasswordSuccess("✅ Senha alterada com sucesso!");
+    setPasswordData({ current: "", new: "", confirm: "" });
+    setTimeout(() => setPasswordSuccess(""), 3000);
+  };
+
+  // ─── FUNÇÃO UPLOAD FOTO ────────────────────────────────────
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Por favor, selecione um arquivo de imagem válido.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("A imagem deve ter no máximo 5MB.");
+      return;
+    }
+
+    setProfileImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ─── FUNÇÃO SAIR ────────────────────────────────────────────
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -254,6 +345,13 @@ export function ClientSettings() {
           {saved ? "Salvo!" : "Salvar Alterações"}
         </Button>
       </div>
+
+      {saveMessage && (
+        <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
+          <Check size={16} className="text-emerald-400 flex-shrink-0" />
+          <span className="text-sm text-emerald-400">{saveMessage}</span>
+        </div>
+      )}
 
       <div className="flex gap-6">
         {/* Sidebar tabs */}
@@ -293,32 +391,106 @@ export function ClientSettings() {
                   Meu Perfil
                 </h2>
                 <div className="flex items-center gap-4 mb-6 p-4 glass-light rounded-xl">
-                  <div className="w-16 h-16 gradient-brand rounded-2xl flex items-center justify-center text-white font-bold text-xl">
-                    {user?.avatar}
+                  <div className="w-16 h-16 gradient-brand rounded-2xl flex items-center justify-center text-white font-bold text-xl overflow-hidden">
+                    {profileImagePreview ? (
+                      <img
+                        src={profileImagePreview}
+                        alt="Perfil"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      profileData.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
-                    <div className="font-semibold text-white">{user?.name}</div>
-                    <div className="text-sm text-slate-500">{user?.email}</div>
+                    <div className="font-semibold text-white">
+                      {profileData.name}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {profileData.email}
+                    </div>
                     <div className="text-xs text-[#D4AF37] mt-0.5">Cliente</div>
                   </div>
-                  <Button variant="secondary" size="sm" className="ml-auto">
-                    Alterar Foto
-                  </Button>
+                  <div className="ml-auto flex gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Upload}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Alterar Foto
+                    </Button>
+                    {profileImagePreview && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={X}
+                        onClick={() => {
+                          setProfileImagePreview(null);
+                          setProfileImage(null);
+                        }}
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Nome completo"
-                    value={user?.name || ""}
-                    onChange={() => {}}
-                  />
-                  <Input
-                    label="E-mail"
-                    type="email"
-                    value={user?.email || ""}
-                    onChange={() => {}}
-                  />
-                  <Input label="Telefone" placeholder="(00) 00000-0000" />
-                  <Input label="Data de Nascimento" type="date" />
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Nome completo
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={profileData.name}
+                      onChange={handleProfileChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      E-mail
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={profileData.email}
+                      onChange={handleProfileChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Telefone
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={profileData.phone}
+                      onChange={handleProfileChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Data de Nascimento
+                    </label>
+                    <input
+                      type="date"
+                      name="birthDate"
+                      value={profileData.birthDate}
+                      onChange={handleProfileChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+                    />
+                  </div>
                 </div>
               </Card>
             )}
@@ -380,118 +552,125 @@ export function ClientSettings() {
                     <div className="text-xs text-slate-500 mb-4">
                       Última alteração: 30 dias atrás
                     </div>
-                    <div className="space-y-3">
-                      <Input
-                        label="Senha atual"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                      <Input
-                        label="Nova senha"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                      <Input
-                        label="Confirmar nova senha"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                      <Button size="sm">Atualizar Senha</Button>
-                    </div>
-                  </div>
-                  <div className="p-4 glass-light rounded-xl border border-white/8">
-                    <div className="text-sm font-semibold text-white mb-1">
-                      Autenticação em 2 Fatores
-                    </div>
-                    <div className="text-xs text-slate-500 mb-3">
-                      Adicione uma camada extra de segurança à sua conta
-                    </div>
-                    <Button variant="secondary" size="sm">
-                      Configurar 2FA
-                    </Button>
-                  </div>
-                  <div className="p-4 glass-light rounded-xl border border-red-500/15">
-                    <div className="text-sm font-semibold text-red-300 mb-1">
-                      Zona de Perigo
-                    </div>
-                    <div className="text-xs text-slate-500 mb-3">
-                      Ações irreversíveis para sua conta
-                    </div>
-                    <div className="flex gap-3">
-                      <Button variant="danger" size="sm" onClick={handleLogout}>
-                        Sair da conta
-                      </Button>
-                      <Button variant="danger" size="sm">
-                        Excluir conta
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
 
-            {activeTab === "aparencia" && (
-              <Card>
-                <h2 className="text-base font-semibold font-display text-white mb-6">
-                  Aparência do Sistema
-                </h2>
-                <div className="space-y-6">
-                  <div>
-                    <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
-                      Tema
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { name: "Dark (Atual)", active: true, bg: "#0a0a0a" },
-                        { name: "Midnight", active: false, bg: "#0d1117" },
-                        { name: "Deep Navy", active: false, bg: "#0f1729" },
-                      ].map((theme) => (
-                        <button
-                          key={theme.name}
-                          className={`p-3 rounded-xl border text-xs font-medium transition-all ${theme.active ? "border-[#D4AF37]/50 text-[#D4AF37]" : "border-white/10 text-slate-500 hover:border-white/20"}`}
-                          style={{ background: theme.bg }}
-                        >
-                          {theme.name}
-                        </button>
-                      ))}
+                    {passwordError && (
+                      <div className="mb-3 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                        {passwordError}
+                      </div>
+                    )}
+                    {passwordSuccess && (
+                      <div className="mb-3 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm">
+                        {passwordSuccess}
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Senha atual
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="current"
+                            value={passwordData.current}
+                            onChange={handlePasswordChange}
+                            placeholder="••••••••"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Nova senha
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="new"
+                            value={passwordData.new}
+                            onChange={handlePasswordChange}
+                            placeholder="••••••••"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Confirmar nova senha
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="confirm"
+                            value={passwordData.confirm}
+                            onChange={handlePasswordChange}
+                            placeholder="••••••••"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={handleChangePassword}>
+                        Atualizar Senha
+                      </Button>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
-                      Cor de Destaque
+
+                  {/* ✅ 2FA REMOVIDO */}
+
+                  {/* Sair da Conta */}
+                  <div className="p-4 glass-light rounded-xl border border-red-500/15">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-red-300 mb-1">
+                          Sair da Conta
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Encerre sua sessão atual
+                        </div>
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        icon={LogOut}
+                        onClick={handleLogout}
+                      >
+                        Sair
+                      </Button>
                     </div>
-                    <div className="flex gap-3">
-                      {[
-                        "#D4AF37",
-                        "#8b5cf6",
-                        "#06b6d4",
-                        "#10b981",
-                        "#ef4444",
-                      ].map((color) => (
-                        <button
-                          key={color}
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${color === "#D4AF37" ? "border-white scale-110" : "border-transparent hover:scale-105"}`}
-                          style={{ background: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
-                      Sidebar
-                    </div>
-                    <Toggle
-                      checked={true}
-                      onChange={() => {}}
-                      label="Sidebar recolhível"
-                      description="Permite minimizar a barra de navegação"
-                    />
-                    <Toggle
-                      checked={false}
-                      onChange={() => {}}
-                      label="Ícones com labels"
-                      description="Mostrar texto ao lado dos ícones quando expandida"
-                    />
                   </div>
                 </div>
               </Card>

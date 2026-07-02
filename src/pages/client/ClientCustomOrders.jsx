@@ -8,6 +8,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from "lucide-react";
 import {
   StatusBadge,
@@ -63,8 +64,27 @@ function StatusTimeline({ current }) {
   );
 }
 
-function OrderCard({ order, onApprove, onReject }) {
+function OrderCard({ order, onApprove, onReject, onCancel }) {
   const [expanded, setExpanded] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // Verifica se o pedido pode ser cancelado (apenas se não estiver finalizado ou entregue)
+  const canCancel =
+    order.status !== "Finalizado" &&
+    order.status !== "Entregue" &&
+    order.status !== "Cancelado";
+
+  const handleCancel = () => {
+    if (canCancel) {
+      setShowCancelConfirm(true);
+    }
+  };
+
+  const confirmCancel = () => {
+    onCancel(order.id);
+    setShowCancelConfirm(false);
+    setExpanded(false);
+  };
 
   return (
     <motion.div
@@ -165,8 +185,71 @@ function OrderCard({ order, onApprove, onReject }) {
               )}
             </div>
           )}
+
+          {/* Botão Cancelar Encomenda */}
+          {canCancel && (
+            <div className="flex justify-end">
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={handleCancel}
+              >
+                Cancelar Encomenda
+              </Button>
+            </div>
+          )}
+
+          {order.status === "Cancelado" && (
+            <div className="text-center text-sm text-red-400 bg-red-500/10 rounded-xl p-3 border border-red-500/20">
+              ⚠️ Esta encomenda foi cancelada
+            </div>
+          )}
         </div>
       </motion.div>
+
+      {/* Modal de Confirmação de Cancelamento */}
+      <Modal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        title="Confirmar Cancelamento"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500/40 flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={28} className="text-red-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Tem certeza?
+            </h3>
+            <p className="text-sm text-slate-400">
+              Você está prestes a cancelar a encomenda <br />
+              <span className="text-white font-semibold">
+                "{order?.protocol}"
+              </span>
+            </p>
+            <p className="text-xs text-slate-500 mt-2">
+              Esta ação não pode ser desfeita.
+            </p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowCancelConfirm(false)}
+              className="flex-1"
+            >
+              Voltar
+            </Button>
+            <Button
+              onClick={confirmCancel}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+            >
+              Confirmar Cancelamento
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 }
@@ -255,11 +338,115 @@ export default function ClientCustomOrders() {
       prev.map((o) => (o.id === id ? { ...o, status: "Aprovado" } : o)),
     );
   };
+
   const handleReject = (id) => {
     setCustomOrders((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: "Cancelado" } : o)),
     );
   };
+
+  // Função para cancelar encomenda
+  const handleCancel = (id) => {
+    setCustomOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, status: "Cancelado" } : o)),
+    );
+  };
+
+  // ✅ ENCOMENDAS SIMULADAS COM STATUS VARIADOS
+  const simulatedOrders = [
+    {
+      id: "ENC-2025-001",
+      protocol: "PROT-8821",
+      clientId: 1,
+      client: "Rafael Mendonça",
+      type: "Uniforme Esportivo Completo",
+      quantity: 15,
+      status: "Em análise",
+      date: "2025-07-01",
+      budget: null,
+      description:
+        "Uniforme completo para equipe de corrida, camisa + short, logo da equipe no peito e costas. Tamanhos P ao GG.",
+    },
+    {
+      id: "ENC-2025-002",
+      protocol: "PROT-8822",
+      clientId: 2,
+      client: "Clube Atlético BH",
+      type: "Kit Completo",
+      quantity: 80,
+      status: "Em produção",
+      date: "2025-06-28",
+      budget: 12800.0,
+      description:
+        "Kit completo para time de futebol amador. 80 uniformes com números personalizados.",
+    },
+    {
+      id: "ENC-2025-003",
+      protocol: "PROT-8823",
+      clientId: 3,
+      client: "Academia FitPower",
+      type: "Camisa Manga Curta",
+      quantity: 50,
+      status: "Aguardando aprovação",
+      date: "2025-06-25",
+      budget: 3200.0,
+      description:
+        "Camisas dry fit com estampa da academia para instrutores. Cores: preta com detalhes laranja.",
+    },
+    {
+      id: "ENC-2025-004",
+      protocol: "PROT-8824",
+      clientId: 1,
+      client: "Rafael Mendonça",
+      type: "Shorts Esportivo",
+      quantity: 10,
+      status: "Em análise",
+      date: "2025-07-02",
+      budget: null,
+      description:
+        "Shorts esportivos para treinos de corrida. Tecido leve e respirável.",
+    },
+    {
+      id: "ENC-2025-005",
+      protocol: "PROT-8825",
+      clientId: 2,
+      client: "Clube Atlético BH",
+      type: "Jaqueta Corta Vento",
+      quantity: 30,
+      status: "Orçamento enviado",
+      date: "2025-06-20",
+      budget: 4500.0,
+      description: "Jaquetas corta vento para equipe, com logo bordado.",
+    },
+    {
+      id: "ENC-2025-006",
+      protocol: "PROT-8826",
+      clientId: 3,
+      client: "Academia FitPower",
+      type: "Legging Esportiva",
+      quantity: 25,
+      status: "Finalizado",
+      date: "2025-06-15",
+      budget: 1875.0,
+      description:
+        "Leggings femininas com compressão para treinos de alta intensidade.",
+    },
+    {
+      id: "ENC-2025-007",
+      protocol: "PROT-8827",
+      clientId: 1,
+      client: "Rafael Mendonça",
+      type: "Camisa Manga Longa",
+      quantity: 5,
+      status: "Em análise",
+      date: "2025-07-03",
+      budget: null,
+      description: "Camisas manga longa para corridas noturnas com refletivos.",
+    },
+  ];
+
+  // Usa as encomendas simuladas se não houver dados reais
+  const ordersToShow = customOrders.length > 0 ? customOrders : simulatedOrders;
 
   return (
     <div>
@@ -280,21 +467,21 @@ export default function ClientCustomOrders() {
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total", value: customOrders.length, color: "text-white" },
+          { label: "Total", value: ordersToShow.length, color: "text-white" },
           {
             label: "Em Análise",
-            value: customOrders.filter((o) => o.status === "Em análise").length,
+            value: ordersToShow.filter((o) => o.status === "Em análise").length,
             color: "text-amber-400",
           },
           {
             label: "Em Produção",
-            value: customOrders.filter((o) => o.status === "Em produção")
+            value: ordersToShow.filter((o) => o.status === "Em produção")
               .length,
             color: "text-blue-400",
           },
           {
             label: "Aguard. Aprovação",
-            value: customOrders.filter(
+            value: ordersToShow.filter(
               (o) => o.status === "Aguardando aprovação",
             ).length,
             color: "text-violet-400",
@@ -310,7 +497,7 @@ export default function ClientCustomOrders() {
       </div>
 
       <div className="space-y-3">
-        {customOrders.map((order, i) => (
+        {ordersToShow.map((order, i) => (
           <motion.div
             key={order.id}
             initial={{ opacity: 0, y: 8 }}
@@ -321,12 +508,13 @@ export default function ClientCustomOrders() {
               order={order}
               onApprove={handleApprove}
               onReject={handleReject}
+              onCancel={handleCancel}
             />
           </motion.div>
         ))}
       </div>
 
-      {customOrders.length === 0 && !showForm && (
+      {ordersToShow.length === 0 && !showForm && (
         <div className="text-center py-16">
           <ClipboardList size={40} className="text-slate-700 mx-auto mb-4" />
           <div className="text-white font-semibold mb-2">

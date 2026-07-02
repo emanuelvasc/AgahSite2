@@ -170,6 +170,18 @@ export function AppProvider({ children }) {
     setSuppliers((prev) => [...prev, supplier]);
   };
 
+  // ✅ FUNÇÃO PARA ATUALIZAR FORNECEDOR
+  const updateSupplier = (id, updatedData) => {
+    setSuppliers((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s)),
+    );
+  };
+
+  // ✅ FUNÇÃO PARA EXCLUIR FORNECEDOR
+  const deleteSupplier = (id) => {
+    setSuppliers((prev) => prev.filter((s) => s.id !== id));
+  };
+
   // ─── EVENTOS ──────────────────────────────────────────────
   const addEventRegistration = (registration) => {
     setEventRegistrations((prev) => [...prev, registration]);
@@ -224,6 +236,8 @@ export function AppProvider({ children }) {
 
         // ✅ Fornecedores
         addSupplier,
+        updateSupplier,
+        deleteSupplier,
 
         // Eventos
         addEventRegistration,

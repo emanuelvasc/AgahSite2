@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Trophy,
   MessageSquare,
-  User,
   Settings,
   Info,
   Phone,
@@ -23,6 +22,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
 import logoTextoAgah from "../../assets/agah-escrito.jpg";
+import { NotificationBell } from "../../components/ui/NotificationBell";
 
 const navItems = [
   { to: "/cliente", label: "Início", icon: Home, end: true },
@@ -46,7 +46,6 @@ const navItems = [
     icon: ClipboardCheck,
   },
   { to: "/cliente/atendimento", label: "Atendimento", icon: MessageSquare },
-  { to: "/cliente/perfil", label: "Perfil", icon: User },
   { to: "/cliente/configuracoes", label: "Configurações", icon: Settings },
   { to: "/cliente/sobre", label: "Sobre", icon: Info },
   { to: "/cliente/contato", label: "Contato", icon: Phone },
@@ -190,7 +189,7 @@ export default function ClientLayout({ children }) {
               className="flex items-center gap-3 flex-1 min-w-0 hover:bg-white/5 rounded-xl p-1 transition-colors"
             >
               <div className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {user?.avatar}
+                {user?.avatar || user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <AnimatePresence>
                 {!collapsed && (
@@ -201,7 +200,7 @@ export default function ClientLayout({ children }) {
                     className="flex-1 overflow-hidden min-w-0"
                   >
                     <div className="text-sm font-medium text-white truncate">
-                      {user?.name}
+                      {user?.name || "Cliente"}
                     </div>
                     <div className="text-xs text-slate-500">Cliente</div>
                   </motion.div>
@@ -249,9 +248,7 @@ export default function ClientLayout({ children }) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
-              <Bell size={18} />
-            </button>
+            <NotificationBell />
             <NavLink
               to="/cliente/carrinho"
               className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
@@ -267,7 +264,7 @@ export default function ClientLayout({ children }) {
               to="/cliente/configuracoes"
               className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity cursor-pointer"
             >
-              {user?.avatar}
+              {user?.avatar || user?.name?.charAt(0)?.toUpperCase() || "U"}
             </Link>
           </div>
         </header>

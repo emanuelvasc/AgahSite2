@@ -1,6 +1,7 @@
 // ─── CLIENT ATTENDANCE ────────────────────────────────────
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   MessageSquare,
   Send,
@@ -31,6 +32,7 @@ const QUICK_MSGS = [
 ];
 
 export function ClientAttendance() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -84,6 +86,11 @@ export function ClientAttendance() {
       },
       1200 + Math.random() * 800,
     );
+  };
+
+  // ✅ Função para ir para a página de encomendas
+  const handleGoToCustomOrders = () => {
+    navigate("/cliente/encomendas");
   };
 
   useEffect(() => {
@@ -146,7 +153,11 @@ export function ClientAttendance() {
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
               Atalhos
             </div>
-            <button className="w-full flex items-center gap-2 text-xs text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-all">
+            {/* ✅ Botão Nova Encomenda - AGORA FUNCIONA */}
+            <button
+              onClick={handleGoToCustomOrders}
+              className="w-full flex items-center gap-2 text-xs text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-all"
+            >
               <FileText size={13} className="text-slate-500" /> Nova Encomenda
             </button>
           </div>

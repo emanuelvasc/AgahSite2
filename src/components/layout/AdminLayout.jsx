@@ -23,6 +23,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
 import logoTextoAgah from "../../assets/agah-escrito.jpg";
+import { NotificationBell } from "../../components/ui/NotificationBell";
 
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -50,7 +51,6 @@ const topNavLinks = [
 export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
-  const { unreadNotifications } = useApp();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -234,12 +234,7 @@ export default function AdminLayout({ children }) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
-              <Bell size={18} />
-              {unreadNotifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D4AF37] rounded-full" />
-              )}
-            </button>
+            <NotificationBell />
             <Link
               to="/admin/configuracoes"
               className="w-8 h-8 gradient-brand rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity cursor-pointer"

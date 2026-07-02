@@ -7,7 +7,7 @@ import ClientLayout from "./components/layout/ClientLayout";
 
 import LandingPage from "./pages/landing/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage"; // ← ADICIONADO
+import RegisterPage from "./pages/auth/RegisterPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 // Admin pages
@@ -35,7 +35,7 @@ import ClientEvents from "./pages/client/ClientEvents";
 import ClientRegistrations from "./pages/client/ClientRegistrations";
 import ClientAttendance from "./pages/client/ClientAttendance";
 import {
-  ClientProfile,
+  // ❌ ClientProfile REMOVIDO
   ClientSettings,
   ClientAbout,
   ClientContact,
@@ -50,8 +50,8 @@ function App() {
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/registrar" element={<RegisterPage />} />{" "}
-            {/* ← ADICIONADO */}
+            <Route path="/registrar" element={<RegisterPage />} />
+
             {/* Admin area */}
             <Route
               path="/admin"
@@ -183,6 +183,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             {/* Client area */}
             <Route
               path="/cliente"
@@ -264,16 +265,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/cliente/perfil"
-              element={
-                <ProtectedRoute role="client">
-                  <ClientLayout>
-                    <ClientProfile />
-                  </ClientLayout>
-                </ProtectedRoute>
-              }
-            />
+            {/* ❌ ROTA /cliente/perfil REMOVIDA */}
             <Route
               path="/cliente/configuracoes"
               element={
@@ -304,6 +296,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
