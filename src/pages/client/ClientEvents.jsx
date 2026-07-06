@@ -43,7 +43,7 @@ const imagePositions = {
   4: "center 30%",
 };
 
-function EventCard({ event, onClick }) {
+function EventCard({ event, onClick, isRegistered }) {
   const pct = (event.participants / event.maxParticipants) * 100;
   const imageUrl = eventImages[event.id] || null;
   const displayName = eventNames[event.id] || event.name;
@@ -53,7 +53,9 @@ function EventCard({ event, onClick }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-2xl overflow-hidden card-hover cursor-pointer group"
+      className={`glass rounded-2xl overflow-hidden card-hover cursor-pointer group ${
+        isRegistered ? "border-emerald-500/30 bg-emerald-500/5" : ""
+      }`}
       onClick={() => onClick(event)}
     >
       <div className="h-44 relative overflow-hidden">
@@ -97,6 +99,14 @@ function EventCard({ event, onClick }) {
             {displayName}
           </h3>
         </div>
+        {/* ✅ Badge "Inscrito" se já estiver inscrito */}
+        {isRegistered && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-500/90 backdrop-blur-sm px-4 py-2 rounded-full border border-emerald-400/50">
+            <span className="text-white font-bold text-sm flex items-center gap-2">
+              <Check size={16} /> Inscrito!
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-5">
@@ -140,8 +150,8 @@ function EventCard({ event, onClick }) {
             </div>
             <div className="text-[10px] text-slate-500">por categoria</div>
           </div>
-          <Button size="sm" icon={ChevronRight}>
-            Inscrever-se
+          <Button size="sm" icon={isRegistered ? Check : ChevronRight}>
+            {isRegistered ? "Inscrito!" : "Inscrever-se"}
           </Button>
         </div>
       </div>
@@ -486,7 +496,7 @@ function PaymentSection({
 }
 
 export default function ClientEvents() {
-  const { addEventRegistration } = useApp();
+  const { eventRegistrations, addEventRegistration } = useApp();
   const { user } = useAuth();
   const [selected, setSelected] = useState(null);
   const [registered, setRegistered] = useState({});
@@ -499,10 +509,23 @@ export default function ClientEvents() {
 
   const shirtSizes = ["PP", "P", "M", "G", "GG", "XGG"];
 
+  // ✅ Carregar inscrições do usuário ao montar o componente
+  useEffect(() => {
+    const userRegistrations = eventRegistrations.filter(
+      (r) => r.clientId === user?.id || r.clientName === user?.name,
+    );
+
+    const registeredMap = {};
+    userRegistrations.forEach((r) => {
+      registeredMap[r.eventId] = true;
+    });
+    setRegistered(registeredMap);
+  }, [eventRegistrations, user]);
+
   const handleRegister = async () => {
     setRegistering(true);
 
-    // ✅ SALVA A INSCRIÇÃO NO BANCO/ESTADO
+    // ✅ SALVA A INSCRIÇÃO NO ESTADO
     const registration = {
       id: Date.now(),
       eventId: selected.id,
@@ -514,10 +537,12 @@ export default function ClientEvents() {
       price: selected.price,
       status: "Confirmada",
       date: new Date().toISOString(),
+      location: "Muriaé, Minas Gerais",
     };
 
     await addEventRegistration(registration);
 
+    // ✅ MARCA COMO INSCRITO
     setRegistered((prev) => ({ ...prev, [selected.id]: true }));
     setRegistering(false);
     setRegDone(true);
@@ -746,28 +771,30 @@ export default function ClientEvents() {
         </div>
       </Modal>
 
+      {/* ✅ GRID DE EVENTOS COM INDICADOR DE INSCRIÇÃO */}
       <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
-        {displayEvents.map((event, i) => (
-          <motion.div
-            key={event.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
-          >
-            <div className="relative">
-              <EventCard event={event} onClick={setSelected} />
-              {registered[event.id] && (
-                <div className="absolute inset-0 rounded-2xl flex items-center justify-center bg-emerald-500/10 backdrop-blur-sm border border-emerald-500/30">
-                  <div className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-semibold text-sm px-4 py-2 rounded-full">
-                    <Check size={16} /> Inscrito!
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        ))}
+        {displayEvents.map((event, i) => {
+          const isRegistered = registered[event.id] || false;
+          return (
+            <motion.div
+              key={event.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+            >
+              <div className="relative">
+                <EventCard
+                  event={event}
+                  onClick={setSelected}
+                  isRegistered={isRegistered}
+                />
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
+      {/* ✅ MODAL DE DETALHES DO EVENTO COM VERIFICAÇÃO DE INSCRIÇÃO */}
       <Modal
         isOpen={!!selected}
         onClose={() => {
@@ -931,14 +958,22 @@ export default function ClientEvents() {
                       por participante
                     </div>
                   </div>
-                  <Button
-                    onClick={() => setStep("payment")}
-                    disabled={!selectedDistance || registered[selected.id]}
-                  >
-                    {registered[selected.id]
-                      ? "Já inscrito!"
-                      : "Avançar para Pagamento"}
-                  </Button>
+                  {/* ✅ VERIFICA SE JÁ ESTÁ INSCRITO */}
+                  {registered[selected.id] ? (
+                    <Button
+                      disabled
+                      className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    >
+                      <Check size={16} className="mr-2" /> Já inscrito!
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => setStep("payment")}
+                      disabled={!selectedDistance}
+                    >
+                      Avançar para Pagamento
+                    </Button>
+                  )}
                 </div>
               </>
             )}

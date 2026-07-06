@@ -13,15 +13,108 @@ import { StatusBadge, SearchInput, Card, Button } from "../../components/ui";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 
+// ✅ DADOS SIMULADOS DE INSCRIÇÕES
+const MOCK_REGISTRATIONS = [
+  {
+    id: 1,
+    clientId: 1,
+    clientName: "Rafael Mendonça",
+    eventId: 1,
+    eventName: "Corre Pela Vida",
+    distance: "21km",
+    shirtSize: "G",
+    price: 120.0,
+    status: "Confirmada",
+    date: "2025-02-15T00:00:00.000Z",
+    location: "Muriaé, Minas Gerais",
+  },
+  {
+    id: 2,
+    clientId: 1,
+    clientName: "Rafael Mendonça",
+    eventId: 2,
+    eventName: "Agah Night Run",
+    distance: "10km",
+    shirtSize: "M",
+    price: 89.9,
+    status: "Confirmada",
+    date: "2025-03-10T00:00:00.000Z",
+    location: "Muriaé, Minas Gerais",
+  },
+  {
+    id: 3,
+    clientId: 1,
+    clientName: "Rafael Mendonça",
+    eventId: 3,
+    eventName: "Corre Delas",
+    distance: "5km",
+    shirtSize: "P",
+    price: 60.0,
+    status: "Pendente",
+    date: "2025-04-05T00:00:00.000Z",
+    location: "Muriaé, Minas Gerais",
+  },
+  {
+    id: 4,
+    clientId: 1,
+    clientName: "Rafael Mendonça",
+    eventId: 4,
+    eventName: "10KM Run",
+    distance: "10km",
+    shirtSize: "M",
+    price: 75.0,
+    status: "Confirmada",
+    date: "2025-01-20T00:00:00.000Z",
+    location: "Muriaé, Minas Gerais",
+  },
+];
+
 export default function ClientRegistrations() {
   const { eventRegistrations } = useApp();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
 
-  // Pega as inscrições do usuário atual
-  const myRegistrations = eventRegistrations.filter(
-    (r) => r.clientId === user?.id || r.clientName === user?.name,
-  );
+  // ✅ Função para garantir que os dados simulados sempre existam
+  const getDisplayRegistrations = () => {
+    // Se não houver inscrições, usa os simulados
+    if (!eventRegistrations || eventRegistrations.length === 0) {
+      return MOCK_REGISTRATIONS;
+    }
+
+    // Verifica se as inscrições existentes são do usuário atual
+    const userRegistrations = eventRegistrations.filter(
+      (r) => r.clientId === user?.id || r.clientName === user?.name,
+    );
+
+    // Se o usuário não tiver inscrições, usa os simulados com o nome do usuário
+    if (userRegistrations.length === 0) {
+      return MOCK_REGISTRATIONS.map((r) => ({
+        ...r,
+        clientName: user?.name || "Cliente",
+        clientId: user?.id || 1,
+      }));
+    }
+
+    // Se o usuário tiver menos de 4 inscrições, mescla com os simulados
+    if (userRegistrations.length < 4) {
+      const existingIds = new Set(userRegistrations.map((r) => r.id));
+      const merged = [
+        ...userRegistrations,
+        ...MOCK_REGISTRATIONS.filter((mock) => !existingIds.has(mock.id))
+          .slice(0, 4 - userRegistrations.length)
+          .map((r) => ({
+            ...r,
+            clientName: user?.name || "Cliente",
+            clientId: user?.id || 1,
+          })),
+      ];
+      return merged;
+    }
+
+    return userRegistrations;
+  };
+
+  const myRegistrations = getDisplayRegistrations();
 
   const filtered = myRegistrations.filter((r) =>
     r.eventName?.toLowerCase().includes(search.toLowerCase()),

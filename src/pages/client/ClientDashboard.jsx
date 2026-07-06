@@ -67,7 +67,7 @@ const slides = [
   },
 ];
 
-// Categorias de produtos com imagens
+// Categorias de produtos com imagens - IMAGENS INTEIRAS
 const productCategories = [
   {
     id: "ciclismo-uniforme",
@@ -292,7 +292,7 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      {/* Categorias de Produtos - BOTÕES ALTERADOS PARA "Fazer Orçamento" */}
+      {/* Categorias de Produtos - IMAGENS INTEIRAS */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -321,12 +321,12 @@ export default function ClientDashboard() {
               className="glass rounded-2xl overflow-hidden card-hover group"
             >
               <Link to="/cliente/encomendas" className="block">
-                <div className="h-48 relative overflow-hidden bg-[#0a0a0a]">
+                <div className="h-48 relative overflow-hidden bg-[#0a0a0a] p-2">
                   {category.image ? (
                     <img
                       src={category.image}
                       alt={category.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 rounded-lg"
                       onError={(e) => {
                         e.target.style.display = "none";
                         e.target.parentElement.innerHTML = `
@@ -402,7 +402,7 @@ export default function ClientDashboard() {
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">

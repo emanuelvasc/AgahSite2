@@ -34,8 +34,6 @@ const categories = [
 function ProductCard({ product, onClick }) {
   const [added, setAdded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const imageRef = useRef(null);
   const { addToCart } = useApp();
 
   const handleAdd = (e) => {
@@ -43,16 +41,6 @@ function ProductCard({ product, onClick }) {
     addToCart(product, 1, product.sizes[0], product.colors[0]);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
-  };
-
-  // ✅ Função que calcula a posição do mouse para mover a imagem
-  const handleMouseMove = (e) => {
-    if (imageRef.current) {
-      const rect = imageRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      setMousePosition({ x, y });
-    }
   };
 
   return (
@@ -64,28 +52,15 @@ function ProductCard({ product, onClick }) {
       className="glass rounded-2xl overflow-hidden card-hover cursor-pointer group"
       onClick={() => onClick(product)}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setMousePosition({ x: 0, y: 0 });
-      }}
-      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image - com efeito parallax e cursor de mão */}
-      <div
-        ref={imageRef}
-        className="h-56 relative overflow-hidden bg-[#0a0a0a] cursor-grab"
-      >
+      <div className="h-56 relative overflow-hidden bg-[#0a0a0a]">
         {product.image ? (
           <>
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-contain transition-transform duration-200"
-              style={{
-                transform: isHovered
-                  ? `scale(1.1) translate(${mousePosition.x * 20}px, ${mousePosition.y * 20}px)`
-                  : "scale(1) translate(0px, 0px)",
-              }}
+              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               onError={(e) => {
                 e.target.style.display = "none";
                 e.target.parentElement.innerHTML = `
@@ -100,7 +75,6 @@ function ProductCard({ product, onClick }) {
                 `;
               }}
             />
-            {/* Botão ampliar imagem - aparece no hover */}
             {isHovered && (
               <div
                 className="absolute bottom-3 right-3 glass-light rounded-full p-2.5 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer z-10"
@@ -134,10 +108,7 @@ function ProductCard({ product, onClick }) {
             </span>
           </div>
         </div>
-        {/* Hover overlay */}
         <div className="absolute inset-0 bg-[#D4AF37]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-        {/* Badge de categoria na imagem */}
         <div className="absolute bottom-2 right-2 text-[8px] bg-black/70 text-white px-2 py-0.5 rounded-full z-10">
           {product.category}
         </div>
@@ -192,32 +163,19 @@ function ProductCard({ product, onClick }) {
 function ProductDetailModal({ product, onClose }) {
   const { addToCart } = useApp();
   const [selectedSize, setSelectedSize] = useState(product?.sizes[0]);
-  const [selectedColor, setSelectedColor] = useState(product?.colors[0]);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [isImageFullscreen, setIsImageFullscreen] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const imageRef = useRef(null);
 
   if (!product) return null;
 
   const handleAdd = () => {
-    addToCart(product, qty, selectedSize, selectedColor);
+    addToCart(product, qty, selectedSize, product.colors[0]);
     setAdded(true);
     setTimeout(() => {
       setAdded(false);
       onClose();
     }, 1200);
-  };
-
-  // ✅ Função que calcula a posição do mouse para mover a imagem no modal
-  const handleMouseMove = (e) => {
-    if (imageRef.current) {
-      const rect = imageRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      setMousePosition({ x, y });
-    }
   };
 
   return (
@@ -229,7 +187,6 @@ function ProductDetailModal({ product, onClose }) {
         onClick={onClose}
       />
 
-      {/* Modal de imagem em tela cheia */}
       {isImageFullscreen && (
         <div
           className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4"
@@ -264,22 +221,13 @@ function ProductDetailModal({ product, onClose }) {
         </button>
 
         <div className="flex flex-col xl:flex-row">
-          {/* Image - com efeito parallax e cursor de mão no modal */}
-          <div
-            ref={imageRef}
-            className="xl:w-80 h-80 xl:h-auto flex-shrink-0 flex items-center justify-center relative bg-[#0a0a0a] p-4 cursor-grab group"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => setMousePosition({ x: 0, y: 0 })}
-          >
+          <div className="xl:w-80 h-80 xl:h-auto flex-shrink-0 flex items-center justify-center relative bg-[#0a0a0a] p-4">
             {product.image ? (
               <>
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full object-contain transition-transform duration-200"
-                  style={{
-                    transform: `scale(1.05) translate(${mousePosition.x * 25}px, ${mousePosition.y * 25}px)`,
-                  }}
+                  className="w-full h-full object-contain"
                   onError={(e) => {
                     e.target.src = "";
                     e.target.className =
@@ -296,7 +244,6 @@ function ProductDetailModal({ product, onClose }) {
                     `;
                   }}
                 />
-                {/* Botão ampliar imagem no modal */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -317,7 +264,7 @@ function ProductDetailModal({ product, onClose }) {
             )}
           </div>
 
-          {/* Info */}
+          {/* Info - SEM CORES */}
           <div className="flex-1 p-6">
             <div className="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider mb-1">
               {product.category} • {product.code}
@@ -348,8 +295,8 @@ function ProductDetailModal({ product, onClose }) {
               juros
             </div>
 
-            {/* Sizes */}
-            <div className="mb-4">
+            {/* ✅ APENAS TAMANHOS - SEM CORES */}
+            <div className="mb-5">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
                 Tamanho
               </div>
@@ -365,29 +312,6 @@ function ProductDetailModal({ product, onClose }) {
                     }`}
                   >
                     {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Colors */}
-            <div className="mb-5">
-              <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
-                Cor:{" "}
-                <span className="text-white normal-case">{selectedColor}</span>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {product.colors.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setSelectedColor(c)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      selectedColor === c
-                        ? "border-[#D4AF37]/60 bg-[#D4AF37]/10 text-[#D4AF37] border"
-                        : "glass-light text-slate-400 border border-white/8 hover:border-white/20"
-                    }`}
-                  >
-                    {c}
                   </button>
                 ))}
               </div>
@@ -476,7 +400,6 @@ export default function ClientProducts() {
         </p>
       </div>
 
-      {/* Categories */}
       <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         {categories.map((cat) => (
           <button
@@ -493,7 +416,6 @@ export default function ClientProducts() {
         ))}
       </div>
 
-      {/* Filters row */}
       <div className="flex items-center gap-3 mb-6">
         <SearchInput
           value={search}
