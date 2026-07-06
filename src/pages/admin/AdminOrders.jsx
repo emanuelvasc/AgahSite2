@@ -35,6 +35,100 @@ const ALL_STATUS = [
   "Cancelado",
 ];
 
+// ✅ DADOS SIMULADOS DE PEDIDOS (BASE)
+const MOCK_ORDERS = [
+  {
+    id: "PED-2025-001",
+    client: "Rafael Mendonça",
+    items: 3,
+    total: 289.7,
+    payment: "Pix",
+    status: "Entregue",
+    date: "2025-01-09T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-002",
+    client: "Equipe Vortex Running",
+    items: 8,
+    total: 720.0,
+    payment: "Cartão de Crédito",
+    status: "Em Produção",
+    date: "2025-01-10T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-003",
+    client: "Academia FitPower",
+    items: 5,
+    total: 450.0,
+    payment: "Boleto",
+    status: "Pendente",
+    date: "2025-01-12T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-004",
+    client: "Clube Atlético BH",
+    items: 12,
+    total: 1250.5,
+    payment: "Pix",
+    status: "Enviado",
+    date: "2025-01-14T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-005",
+    client: "Carla Souza",
+    items: 2,
+    total: 178.9,
+    payment: "Cartão de Crédito",
+    status: "Aguardando Pagamento",
+    date: "2025-01-15T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-006",
+    client: "Run Brasil Eventos",
+    items: 6,
+    total: 540.0,
+    payment: "Pix",
+    status: "Entregue",
+    date: "2025-01-16T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-007",
+    client: "Mariana Oliveira",
+    items: 4,
+    total: 320.0,
+    payment: "Dinheiro",
+    status: "Cancelado",
+    date: "2025-01-18T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-008",
+    client: "Pedro Henrique",
+    items: 1,
+    total: 89.9,
+    payment: "Pix",
+    status: "Entregue",
+    date: "2025-01-20T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-009",
+    client: "Ana Paula Silva",
+    items: 7,
+    total: 630.0,
+    payment: "Cartão de Crédito",
+    status: "Em Produção",
+    date: "2025-01-22T00:00:00.000Z",
+  },
+  {
+    id: "PED-2025-010",
+    client: "Carlos Eduardo",
+    items: 3,
+    total: 270.0,
+    payment: "Boleto",
+    status: "Enviado",
+    date: "2025-01-24T00:00:00.000Z",
+  },
+];
+
 export default function AdminOrders() {
   const { orders, addOrder, updateOrderStatus, updateOrder } = useApp();
   const [search, setSearch] = useState("");
@@ -45,6 +139,30 @@ export default function AdminOrders() {
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [validationError, setValidationError] = useState("");
+
+  // ✅ Função para garantir que os dados simulados sempre existam
+  const getDisplayOrders = () => {
+    // Se não houver pedidos, usa os simulados
+    if (!orders || orders.length === 0) {
+      return MOCK_ORDERS;
+    }
+
+    // Se tiver menos de 10 pedidos, mescla com os simulados
+    if (orders.length < 10) {
+      // Cria um Set com os IDs dos pedidos existentes
+      const existingIds = new Set(orders.map((o) => o.id));
+      // Adiciona os pedidos simulados que não existem
+      const merged = [
+        ...orders,
+        ...MOCK_ORDERS.filter((mock) => !existingIds.has(mock.id)),
+      ];
+      return merged;
+    }
+
+    return orders;
+  };
+
+  const displayOrders = getDisplayOrders();
 
   // Estado para novo pedido
   const [newOrder, setNewOrder] = useState({
@@ -65,7 +183,7 @@ export default function AdminOrders() {
     status: "",
   });
 
-  const filtered = orders.filter((o) => {
+  const filtered = displayOrders.filter((o) => {
     const matchSearch =
       o.id.toLowerCase().includes(search.toLowerCase()) ||
       o.client.toLowerCase().includes(search.toLowerCase());
@@ -153,7 +271,7 @@ export default function AdminOrders() {
 
     setIsSaving(true);
 
-    const maxId = orders.reduce((max, o) => {
+    const maxId = displayOrders.reduce((max, o) => {
       const num = parseInt(o.id.replace("PED-2025-", ""));
       return Math.max(max, num);
     }, 0);
@@ -213,7 +331,7 @@ export default function AdminOrders() {
     <div>
       <PageHeader
         title="Pedidos"
-        subtitle={`${orders.length} pedidos no total`}
+        subtitle={`${displayOrders.length} pedidos no total`}
         actions={
           <Button icon={Plus} onClick={() => setShowNewOrderModal(true)}>
             Novo Pedido
@@ -226,22 +344,23 @@ export default function AdminOrders() {
         {[
           {
             label: "Total de Pedidos",
-            value: orders.length,
+            value: displayOrders.length,
             color: "text-white",
           },
           {
             label: "Em Produção",
-            value: orders.filter((o) => o.status === "Em Produção").length,
+            value: displayOrders.filter((o) => o.status === "Em Produção")
+              .length,
             color: "text-blue-400",
           },
           {
             label: "Enviados",
-            value: orders.filter((o) => o.status === "Enviado").length,
+            value: displayOrders.filter((o) => o.status === "Enviado").length,
             color: "text-violet-400",
           },
           {
             label: "Receita Total",
-            value: `R$ ${orders.reduce((a, o) => a + o.total, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+            value: `R$ ${displayOrders.reduce((a, o) => a + o.total, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
             color: "text-[#D4AF37]",
           },
         ].map((s) => (
@@ -419,8 +538,6 @@ export default function AdminOrders() {
                 </div>
               ))}
             </div>
-
-            {/* ✅ REMOVIDA A SEÇÃO "ALTERAR STATUS" */}
 
             <div className="flex gap-3 pt-2">
               <Button

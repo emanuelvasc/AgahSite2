@@ -14,19 +14,18 @@ import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 
 export default function ClientRegistrations() {
-  const { eventRegistrations, events } = useApp();
+  const { eventRegistrations } = useApp();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
 
+  // Pega as inscrições do usuário atual
   const myRegistrations = eventRegistrations.filter(
-    (r) => r.clientId === 1 || r.clientName === user?.name,
+    (r) => r.clientId === user?.id || r.clientName === user?.name,
   );
 
   const filtered = myRegistrations.filter((r) =>
-    r.eventName.toLowerCase().includes(search.toLowerCase()),
+    r.eventName?.toLowerCase().includes(search.toLowerCase()),
   );
-
-  const findEvent = (eventId) => events.find((e) => e.id === eventId);
 
   return (
     <div>
@@ -39,7 +38,6 @@ export default function ClientRegistrations() {
         </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
           {
@@ -49,8 +47,9 @@ export default function ClientRegistrations() {
           },
           {
             label: "Confirmadas",
-            value: myRegistrations.filter((r) => r.status === "Confirmada")
-              .length,
+            value: myRegistrations.filter(
+              (r) => r.status === "Confirmada" || r.status === "Confirmado",
+            ).length,
             color: "text-emerald-400",
           },
           {
@@ -79,61 +78,56 @@ export default function ClientRegistrations() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((reg, i) => {
-          const event = findEvent(reg.eventId);
-          return (
-            <motion.div
-              key={reg.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              className="glass rounded-2xl p-5 flex items-center gap-4 border border-white/6"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
-                <Trophy size={20} className="text-[#D4AF37]" />
-              </div>
+        {filtered.map((reg, i) => (
+          <motion.div
+            key={reg.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            className="glass rounded-2xl p-5 flex items-center gap-4 border border-white/6"
+          >
+            <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
+              <Trophy size={20} className="text-[#D4AF37]" />
+            </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs font-bold text-[#D4AF37]">
-                    {reg.id}
-                  </span>
-                  <StatusBadge status={reg.status} />
-                </div>
-                <h3 className="font-semibold text-white text-sm mb-1.5">
-                  {reg.eventName}
-                </h3>
-                <div className="flex items-center gap-3 text-xs text-slate-500">
-                  {event && (
-                    <span className="flex items-center gap-1">
-                      <Calendar size={11} />
-                      {new Date(event.date).toLocaleDateString("pt-BR")}
-                    </span>
-                  )}
-                  {event && (
-                    <span className="flex items-center gap-1">
-                      <MapPin size={11} />
-                      {event.location}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Shirt size={11} />
-                    {reg.shirtSize}
-                  </span>
-                </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-mono text-xs font-bold text-[#D4AF37]">
+                  #{reg.id}
+                </span>
+                <StatusBadge status={reg.status || "Confirmada"} />
               </div>
+              <h3 className="font-semibold text-white text-sm mb-1.5">
+                {reg.eventName || "Evento"}
+              </h3>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1">
+                  <Calendar size={11} />
+                  {reg.date
+                    ? new Date(reg.date).toLocaleDateString("pt-BR")
+                    : "Em breve"}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin size={11} />
+                  {reg.location || "Muriaé, MG"}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Shirt size={11} />
+                  {reg.shirtSize || "M"}
+                </span>
+              </div>
+            </div>
 
-              <div className="text-right flex-shrink-0">
-                <div className="font-bold text-white">
-                  R$ {reg.price.toFixed(2).replace(".", ",")}
-                </div>
-                <div className="text-xs text-slate-600 mt-0.5">
-                  {reg.distance}
-                </div>
+            <div className="text-right flex-shrink-0">
+              <div className="font-bold text-white">
+                R$ {reg.price?.toFixed(2).replace(".", ",") || "0,00"}
               </div>
-            </motion.div>
-          );
-        })}
+              <div className="text-xs text-slate-600 mt-0.5">
+                {reg.distance || "10km"}
+              </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {filtered.length === 0 && (

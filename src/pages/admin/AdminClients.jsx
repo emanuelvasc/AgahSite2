@@ -27,6 +27,130 @@ import {
 } from "../../components/ui";
 import { useApp } from "../../context/AppContext";
 
+// ✅ DADOS SIMULADOS DE CLIENTES (BASE)
+const MOCK_CLIENTS = [
+  {
+    id: 1,
+    name: "Rafael Mendonça",
+    email: "rafael@email.com",
+    phone: "(31) 99999-0000",
+    city: "Contagem",
+    state: "MG",
+    status: "VIP",
+    orders: 12,
+    totalSpent: 547.8,
+    since: "2023-01-15T00:00:00.000Z",
+  },
+  {
+    id: 2,
+    name: "Ana Paula Silva",
+    email: "ana@email.com",
+    phone: "(31) 98888-1111",
+    city: "Belo Horizonte",
+    state: "MG",
+    status: "Ativo",
+    orders: 8,
+    totalSpent: 289.5,
+    since: "2024-03-10T00:00:00.000Z",
+  },
+  {
+    id: 3,
+    name: "Carlos Eduardo",
+    email: "carlos@email.com",
+    phone: "(31) 97777-2222",
+    city: "Nova Lima",
+    state: "MG",
+    status: "Ativo",
+    orders: 5,
+    totalSpent: 320.0,
+    since: "2024-06-20T00:00:00.000Z",
+  },
+  {
+    id: 4,
+    name: "Equipe Vortex Running",
+    email: "vortex@email.com",
+    phone: "(31) 96666-3333",
+    city: "Muriaé",
+    state: "MG",
+    status: "VIP",
+    orders: 18,
+    totalSpent: 1245.3,
+    since: "2023-08-05T00:00:00.000Z",
+  },
+  {
+    id: 5,
+    name: "Academia FitPower",
+    email: "fitpower@email.com",
+    phone: "(31) 95555-4444",
+    city: "Muriaé",
+    state: "MG",
+    status: "Ativo",
+    orders: 22,
+    totalSpent: 890.2,
+    since: "2024-01-12T00:00:00.000Z",
+  },
+  {
+    id: 6,
+    name: "Clube Atlético BH",
+    email: "atleticobh@email.com",
+    phone: "(31) 94444-5555",
+    city: "Belo Horizonte",
+    state: "MG",
+    status: "VIP",
+    orders: 15,
+    totalSpent: 2150.0,
+    since: "2022-11-25T00:00:00.000Z",
+  },
+  {
+    id: 7,
+    name: "Carla Souza",
+    email: "carla@email.com",
+    phone: "(31) 93333-6666",
+    city: "Contagem",
+    state: "MG",
+    status: "Ativo",
+    orders: 4,
+    totalSpent: 175.5,
+    since: "2025-02-14T00:00:00.000Z",
+  },
+  {
+    id: 8,
+    name: "Pedro Henrique",
+    email: "pedro@email.com",
+    phone: "(31) 92222-7777",
+    city: "Muriaé",
+    state: "MG",
+    status: "Inativo",
+    orders: 2,
+    totalSpent: 45.9,
+    since: "2024-09-08T00:00:00.000Z",
+  },
+  {
+    id: 9,
+    name: "Run Brasil Eventos",
+    email: "runbrasil@email.com",
+    phone: "(31) 91111-8888",
+    city: "Nova Lima",
+    state: "MG",
+    status: "Ativo",
+    orders: 10,
+    totalSpent: 670.0,
+    since: "2024-04-22T00:00:00.000Z",
+  },
+  {
+    id: 10,
+    name: "Mariana Oliveira",
+    email: "mariana@email.com",
+    phone: "(31) 90000-9999",
+    city: "Belo Horizonte",
+    state: "MG",
+    status: "VIP",
+    orders: 6,
+    totalSpent: 480.0,
+    since: "2023-10-30T00:00:00.000Z",
+  },
+];
+
 export default function AdminClients() {
   const { clients, addClient, deleteClient, updateClient } = useApp();
   const [search, setSearch] = useState("");
@@ -37,13 +161,34 @@ export default function AdminClients() {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Estado para o formulário de novo cliente
+  // ✅ Função para garantir que os dados simulados sempre existam
+  const getDisplayClients = () => {
+    if (!clients || clients.length === 0) {
+      return MOCK_CLIENTS;
+    }
+
+    if (clients.length < 10) {
+      const existingIds = new Set(clients.map((c) => c.id));
+      const merged = [
+        ...clients,
+        ...MOCK_CLIENTS.filter((mock) => !existingIds.has(mock.id)),
+      ];
+      return merged;
+    }
+
+    return clients;
+  };
+
+  const displayClients = getDisplayClients();
+
+  // ✅ Estado para o formulário de novo cliente com Total Gasto
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
     phone: "",
     city: "",
     state: "",
+    totalSpent: "", // ✅ NOVO CAMPO
   });
 
   // ✅ Estado para edição de cliente
@@ -62,7 +207,7 @@ export default function AdminClients() {
   // Estado para sucesso
   const [successMessage, setSuccessMessage] = useState("");
 
-  const filtered = clients.filter(
+  const filtered = displayClients.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase()),
@@ -84,7 +229,7 @@ export default function AdminClients() {
     if (successMessage) setSuccessMessage("");
   };
 
-  // Função para salvar o novo cliente
+  // ✅ Função para salvar o novo cliente (com Total Gasto)
   const handleSaveClient = () => {
     if (!newClient.name.trim()) {
       setValidationError("⚠️ O campo Nome é obrigatório.");
@@ -98,7 +243,7 @@ export default function AdminClients() {
     setIsSaving(true);
 
     setTimeout(() => {
-      const maxId = clients.reduce((max, c) => Math.max(max, c.id), 0);
+      const maxId = displayClients.reduce((max, c) => Math.max(max, c.id), 0);
       const clientToAdd = {
         id: maxId + 1,
         name: newClient.name.trim(),
@@ -108,7 +253,7 @@ export default function AdminClients() {
         state: newClient.state || "UF",
         status: "Ativo",
         orders: 0,
-        totalSpent: 0,
+        totalSpent: parseFloat(newClient.totalSpent) || 0,
         since: new Date().toISOString(),
       };
 
@@ -120,6 +265,7 @@ export default function AdminClients() {
         phone: "",
         city: "",
         state: "",
+        totalSpent: "",
       });
       setValidationError("");
       setSuccessMessage("✅ Cliente adicionado com sucesso!");
@@ -175,7 +321,6 @@ export default function AdminClients() {
       setSuccessMessage("✅ Cliente atualizado com sucesso!");
       setIsSaving(false);
 
-      // Atualiza o cliente selecionado se estiver aberto
       if (selected && selected.id === editingClient.id) {
         setSelected({
           ...selected,
@@ -248,7 +393,7 @@ export default function AdminClients() {
     <div>
       <PageHeader
         title="Clientes"
-        subtitle={`${clients.length} clientes cadastrados`}
+        subtitle={`${displayClients.length} clientes cadastrados`}
         actions={
           <Button icon={UserPlus} onClick={() => setShowModal(true)}>
             Novo Cliente
@@ -259,15 +404,15 @@ export default function AdminClients() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total", value: clients.length, color: "text-white" },
+          { label: "Total", value: displayClients.length, color: "text-white" },
           {
             label: "Ativos",
-            value: clients.filter((c) => c.status === "Ativo").length,
+            value: displayClients.filter((c) => c.status === "Ativo").length,
             color: "text-emerald-400",
           },
           {
             label: "VIP",
-            value: clients.filter((c) => c.status === "VIP").length,
+            value: displayClients.filter((c) => c.status === "VIP").length,
             color: "text-amber-400",
           },
           { label: "Novos (mês)", value: 3, color: "text-blue-400" },
@@ -376,7 +521,6 @@ export default function AdminClients() {
                   >
                     Ver
                   </Button>
-                  {/* ✅ Botão Editar */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -387,7 +531,6 @@ export default function AdminClients() {
                   >
                     <Edit2 size={15} />
                   </button>
-                  {/* Botão Excluir */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -431,7 +574,6 @@ export default function AdminClients() {
                 </div>
               </div>
               <div className="flex gap-2">
-                {/* ✅ Botão Editar no modal de detalhes */}
                 <button
                   onClick={() => {
                     setSelected(null);
@@ -541,7 +683,7 @@ export default function AdminClients() {
         </div>
       </Modal>
 
-      {/* ✅ Modal de Edição de Cliente */}
+      {/* Modal de Edição de Cliente */}
       <Modal isOpen={isEditing} onClose={closeEditModal} title="Editar Cliente">
         <div className="space-y-4">
           <div>
@@ -637,7 +779,6 @@ export default function AdminClients() {
             </select>
           </div>
 
-          {/* Mensagem de erro */}
           {validationError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2">
               <X size={16} className="text-red-400 flex-shrink-0" />
@@ -645,7 +786,6 @@ export default function AdminClients() {
             </div>
           )}
 
-          {/* Mensagem de sucesso */}
           {successMessage && (
             <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center gap-2">
               <Check size={16} className="text-emerald-400 flex-shrink-0" />
@@ -680,7 +820,7 @@ export default function AdminClients() {
         </div>
       </Modal>
 
-      {/* Modal de Novo Cliente */}
+      {/* ✅ Modal de Novo Cliente - COM TOTAL GASTO */}
       <Modal
         isOpen={showModal}
         onClose={() => {
@@ -691,6 +831,7 @@ export default function AdminClients() {
             phone: "",
             city: "",
             state: "",
+            totalSpent: "",
           });
           setValidationError("");
           setSuccessMessage("");
@@ -769,7 +910,26 @@ export default function AdminClients() {
             </div>
           </div>
 
-          {/* Mensagem de erro */}
+          {/* ✅ NOVO CAMPO: Total Gasto */}
+          <div>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+              Total Gasto
+            </label>
+            <input
+              type="number"
+              name="totalSpent"
+              value={newClient.totalSpent}
+              onChange={handleInputChange}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white text-sm px-4 py-3 placeholder:text-slate-600 focus:border-[#D4AF37]/50 transition-colors outline-none"
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Valor total gasto pelo cliente (opcional)
+            </p>
+          </div>
+
           {validationError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2">
               <X size={16} className="text-red-400 flex-shrink-0" />
@@ -777,7 +937,6 @@ export default function AdminClients() {
             </div>
           )}
 
-          {/* Mensagem de sucesso */}
           {successMessage && (
             <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center gap-2">
               <Check size={16} className="text-emerald-400 flex-shrink-0" />
@@ -796,6 +955,7 @@ export default function AdminClients() {
                   phone: "",
                   city: "",
                   state: "",
+                  totalSpent: "",
                 });
                 setValidationError("");
                 setSuccessMessage("");

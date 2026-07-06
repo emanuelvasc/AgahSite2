@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { Button } from "../../components/ui";
+import { useAuth } from "../../context/AuthContext";
 
 // ─── COMPONENTE DE PAGAMENTO ──────────────────────────────
 function PaymentModal({
@@ -35,7 +36,7 @@ function PaymentModal({
   const [loading, setLoading] = useState(false);
   const [paid, setPaid] = useState(false);
   const [showPix, setShowPix] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos em segundos
+  const [timeLeft, setTimeLeft] = useState(600);
   const [copied, setCopied] = useState(false);
 
   const paymentMethods = [
@@ -43,12 +44,10 @@ function PaymentModal({
     { id: "card", label: "Cartão de Crédito", icon: CreditCard },
   ];
 
-  // Chave PIX simulada
   const pixKey = "agah@agahsports.com.br";
   const pixQrCode =
     "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=agah@agahsports.com.br";
 
-  // ✅ CONTADOR REGRESSIVO - CORRIGIDO COM useEffect
   useEffect(() => {
     if (showPix && timeLeft > 0) {
       const timer = setTimeout(() => {
@@ -58,7 +57,6 @@ function PaymentModal({
     }
   }, [timeLeft, showPix]);
 
-  // Formata o tempo
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -67,13 +65,11 @@ function PaymentModal({
 
   const handlePayment = async () => {
     if (paymentMethod === "pix") {
-      // Abre a interface PIX e reseta o timer
       setShowPix(true);
       setTimeLeft(600);
       return;
     }
 
-    // Para cartão de crédito
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1800));
     setLoading(false);
@@ -124,7 +120,6 @@ function PaymentModal({
     );
   }
 
-  // ─── TELA PIX ──────────────────────────────────────────────
   if (showPix) {
     const isExpired = timeLeft <= 0;
 
@@ -157,14 +152,12 @@ function PaymentModal({
             </p>
           </div>
 
-          {/* QR Code */}
           <div className="flex justify-center mb-4">
             <div className="bg-white p-3 rounded-2xl">
               <img src={pixQrCode} alt="QR Code PIX" className="w-48 h-48" />
             </div>
           </div>
 
-          {/* Chave PIX */}
           <div className="glass-light rounded-xl p-3 mb-4">
             <div className="text-xs text-slate-400 mb-1">
               Chave PIX (E-mail)
@@ -189,7 +182,6 @@ function PaymentModal({
             )}
           </div>
 
-          {/* ✅ Timer - AGORA FUNCIONANDO COM useEffect */}
           <div className="text-center mb-4">
             <div className="flex items-center justify-center gap-2">
               <div
@@ -203,7 +195,6 @@ function PaymentModal({
                 ? "⏰ Tempo esgotado!"
                 : "⏱️ Tempo restante para pagamento"}
             </div>
-            {/* ✅ Barra de progresso do tempo */}
             <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-1000"
@@ -215,7 +206,6 @@ function PaymentModal({
             </div>
           </div>
 
-          {/* Valor */}
           <div className="glass-light rounded-xl p-3 text-center mb-4">
             <div className="text-xs text-slate-400">Valor a pagar</div>
             <div className="text-2xl font-bold text-[#D4AF37]">
@@ -223,7 +213,6 @@ function PaymentModal({
             </div>
           </div>
 
-          {/* Botões */}
           <div className="flex gap-3">
             <Button
               variant="secondary"
@@ -264,7 +253,6 @@ function PaymentModal({
     );
   }
 
-  // ─── TELA PRINCIPAL DE PAGAMENTO ──────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
       <motion.div
@@ -283,7 +271,6 @@ function PaymentModal({
           Realizar Pagamento
         </h2>
 
-        {/* Resumo do pedido */}
         <div className="glass-light rounded-xl p-4 space-y-2 border border-white/8 mb-5">
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Itens</span>
@@ -319,7 +306,6 @@ function PaymentModal({
           </div>
         </div>
 
-        {/* Métodos de pagamento */}
         <div>
           <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
             Selecione a forma de pagamento
@@ -353,7 +339,6 @@ function PaymentModal({
           </div>
         </div>
 
-        {/* Dados do cartão (se selecionado) */}
         {paymentMethod === "card" && (
           <div className="glass-light rounded-xl p-4 space-y-3 border border-white/8 mt-4">
             <div className="grid grid-cols-2 gap-3">
@@ -401,7 +386,6 @@ function PaymentModal({
           </div>
         )}
 
-        {/* Segurança */}
         <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-4">
           <Lock size={12} className="text-[#D4AF37]" />
           <span>Pagamento seguro com criptografia</span>
@@ -409,7 +393,6 @@ function PaymentModal({
           <span>Dados protegidos</span>
         </div>
 
-        {/* Botões */}
         <div className="flex gap-3 mt-4">
           <Button variant="secondary" onClick={onClose} className="flex-1">
             Cancelar
@@ -431,8 +414,15 @@ function PaymentModal({
 }
 
 export default function ClientCart() {
-  const { cart, removeFromCart, updateCartQty, cartTotal, clearCart } =
-    useApp();
+  const {
+    cart,
+    removeFromCart,
+    updateCartQty,
+    cartTotal,
+    clearCart,
+    addOrder,
+  } = useApp();
+  const { user } = useAuth();
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -452,9 +442,30 @@ export default function ClientCart() {
     setShowPayment(true);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     setShowPayment(false);
     setCheckingOut(true);
+
+    // ✅ SALVA O PEDIDO NO BANCO/ESTADO
+    const orderData = {
+      client: user?.name || "Cliente",
+      items: cart.reduce((acc, item) => acc + item.qty, 0),
+      total: total,
+      payment: "Pix",
+      status: "Pendente",
+      date: new Date().toISOString(),
+      orderItems: cart.map((item) => ({
+        productId: item.product.id,
+        name: item.product.name,
+        qty: item.qty,
+        size: item.size,
+        color: item.color,
+        price: item.product.price,
+      })),
+    };
+
+    await addOrder(orderData);
+
     setTimeout(() => {
       setOrdered(true);
       clearCart();
@@ -537,7 +548,6 @@ export default function ClientCart() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Items */}
         <div className="xl:col-span-2 space-y-3">
           <AnimatePresence>
             {cart.map((item) => (
@@ -642,7 +652,6 @@ export default function ClientCart() {
           </Link>
         </div>
 
-        {/* Summary */}
         <div className="space-y-4">
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -747,7 +756,6 @@ export default function ClientCart() {
         </div>
       </div>
 
-      {/* ─── MODAL DE PAGAMENTO ───────────────────────────── */}
       <PaymentModal
         isOpen={showPayment}
         onClose={handleCancelPayment}

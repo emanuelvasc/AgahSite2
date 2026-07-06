@@ -48,6 +48,135 @@ const PRODUCTION_LINES = [
   { id: "expedicao", name: "Expedição", color: "#84cc16" },
 ];
 
+// ✅ DADOS SIMULADOS DE ENCOMENDAS
+const MOCK_CUSTOM_ORDERS = [
+  {
+    id: 1,
+    protocol: "PROT-8821",
+    client: "Clube Atlético BH",
+    type: "Uniforme Esportivo Completo",
+    quantity: 38,
+    description:
+      "Uniforme para equipe de corrida, camisa + short, logo da equipe no peito e costas.",
+    budget: 2850.0,
+    status: "Em produção",
+    date: "2025-01-02T00:00:00.000Z",
+    productionLine: "costura",
+  },
+  {
+    id: 2,
+    protocol: "PROT-8822",
+    client: "Equipe Vortex Running",
+    type: "Kit Completo",
+    quantity: 80,
+    description:
+      "Kit completo para equipe de corrida, incluindo camisa, short e meias.",
+    budget: 4200.0,
+    status: "Em produção",
+    date: "2025-01-04T00:00:00.000Z",
+    productionLine: "corte",
+  },
+  {
+    id: 3,
+    protocol: "PROT-8823",
+    client: "Academia FitPower",
+    type: "Camisas Personalizadas",
+    quantity: 50,
+    description: "Camisas dry fit com estampa da academia para instrutores.",
+    budget: 3200.0,
+    status: "Aguardando aprovação",
+    date: "2025-01-10T00:00:00.000Z",
+    productionLine: "costura",
+  },
+  {
+    id: 4,
+    protocol: "PROT-8824",
+    client: "Rafael Mendonça",
+    type: "Shorts Esportivos",
+    quantity: 10,
+    description:
+      "Shorts esportivos para treinos de corrida. Tecido leve e respirável.",
+    budget: null,
+    status: "Em análise",
+    date: "2025-01-12T00:00:00.000Z",
+    productionLine: "",
+  },
+  {
+    id: 5,
+    protocol: "PROT-8825",
+    client: "Run Brasil Eventos",
+    type: "Jaqueta Corta Vento",
+    quantity: 30,
+    description: "Jaquetas corta vento para equipe, com logo bordado.",
+    budget: 4500.0,
+    status: "Orçamento enviado",
+    date: "2025-01-15T00:00:00.000Z",
+    productionLine: "",
+  },
+  {
+    id: 6,
+    protocol: "PROT-8826",
+    client: "Academia FitPower",
+    type: "Legging Esportiva",
+    quantity: 25,
+    description:
+      "Leggings femininas com compressão para treinos de alta intensidade.",
+    budget: 1875.0,
+    status: "Finalizado",
+    date: "2025-01-18T00:00:00.000Z",
+    productionLine: "expedicao",
+  },
+  {
+    id: 7,
+    protocol: "PROT-8827",
+    client: "Rafael Mendonça",
+    type: "Camisa Manga Longa",
+    quantity: 5,
+    description: "Camisas manga longa para corridas noturnas com refletivos.",
+    budget: null,
+    status: "Em análise",
+    date: "2025-01-20T00:00:00.000Z",
+    productionLine: "",
+  },
+  {
+    id: 8,
+    protocol: "PROT-8828",
+    client: "Equipe Vortex Running",
+    type: "Boné Performance Sport",
+    quantity: 30,
+    description: "Boné de corrida com proteção UV e logo bordado.",
+    budget: 1200.0,
+    status: "Aprovado",
+    date: "2025-01-22T00:00:00.000Z",
+    productionLine: "",
+  },
+  {
+    id: 9,
+    protocol: "PROT-8829",
+    client: "Clube Atlético BH",
+    type: "Moletom Fleece Premium",
+    quantity: 6,
+    description: "Moletom com capuz e bolso canguru, bordado com logo.",
+    budget: 890.0,
+    status: "Em produção",
+    date: "2025-01-24T00:00:00.000Z",
+    productionLine: "acabamento",
+  },
+  {
+    id: 10,
+    protocol: "PROT-8830",
+    client: "Carlos Eduardo",
+    type: "Camisa Manga Curta",
+    quantity: 15,
+    description:
+      "Camisas para equipe de futebol society, com numeração personalizada.",
+    budget: 1100.0,
+    status: "Cancelado",
+    date: "2025-01-26T00:00:00.000Z",
+    productionLine: "",
+  },
+];
+
 export default function AdminCustomOrders() {
   const { customOrders, addCustomOrder, updateCustomOrder, addOrder, orders } =
     useApp();
@@ -63,6 +192,26 @@ export default function AdminCustomOrders() {
   const [showProductionLineModal, setShowProductionLineModal] = useState(false);
   const [selectedLine, setSelectedLine] = useState("");
 
+  // ✅ Função para garantir que os dados simulados sempre existam
+  const getDisplayCustomOrders = () => {
+    if (!customOrders || customOrders.length === 0) {
+      return MOCK_CUSTOM_ORDERS;
+    }
+
+    if (customOrders.length < 10) {
+      const existingIds = new Set(customOrders.map((o) => o.id));
+      const merged = [
+        ...customOrders,
+        ...MOCK_CUSTOM_ORDERS.filter((mock) => !existingIds.has(mock.id)),
+      ];
+      return merged;
+    }
+
+    return customOrders;
+  };
+
+  const displayCustomOrders = getDisplayCustomOrders();
+
   // Estado para nova encomenda
   const [newOrder, setNewOrder] = useState({
     client: "",
@@ -71,7 +220,7 @@ export default function AdminCustomOrders() {
     description: "",
     budget: "",
     status: "Em análise",
-    productionLine: "", // ✅ Linha de produção
+    productionLine: "",
   });
 
   // Estados para modais de ações
@@ -81,7 +230,7 @@ export default function AdminCustomOrders() {
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [budgetValue, setBudgetValue] = useState("");
 
-  const filtered = customOrders.filter((o) => {
+  const filtered = displayCustomOrders.filter((o) => {
     const matchStatus = statusFilter === "Todos" || o.status === statusFilter;
     const matchSearch =
       o.client.toLowerCase().includes(search.toLowerCase()) ||
@@ -106,13 +255,13 @@ export default function AdminCustomOrders() {
 
     setIsSaving(true);
 
-    const maxId = customOrders.reduce((max, o) => {
+    const maxId = displayCustomOrders.reduce((max, o) => {
       const num = parseInt(o.protocol.replace("PROT-", ""));
       return Math.max(max, num);
     }, 0);
 
     const orderToAdd = {
-      id: customOrders.length + 1,
+      id: displayCustomOrders.length + 1,
       protocol: `PROT-${String(maxId + 1).padStart(4, "0")}`,
       client: newOrder.client.trim(),
       type: newOrder.type.trim(),
@@ -121,7 +270,7 @@ export default function AdminCustomOrders() {
       budget: newOrder.budget ? parseFloat(newOrder.budget) : null,
       status: newOrder.status,
       date: new Date().toISOString(),
-      productionLine: newOrder.productionLine || "", // ✅ Salva a linha
+      productionLine: newOrder.productionLine || "",
     };
 
     addCustomOrder(orderToAdd);
@@ -222,13 +371,11 @@ export default function AdminCustomOrders() {
       return;
     }
 
-    // Se não tiver orçamento, abre modal para adicionar
     if (!selected.budget) {
       setShowBudgetModal(true);
       return;
     }
 
-    // ✅ Abre modal para escolher a linha de produção
     setShowProductionLineModal(true);
   };
 
@@ -277,7 +424,7 @@ export default function AdminCustomOrders() {
     <div>
       <PageHeader
         title="Encomendas"
-        subtitle="Pedidos personalizados e produção sob demanda"
+        subtitle={`${displayCustomOrders.length} encomendas cadastradas`}
         actions={
           <Button icon={Plus} onClick={() => setShowNewOrderModal(true)}>
             Nova Encomenda
@@ -288,21 +435,26 @@ export default function AdminCustomOrders() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total", value: customOrders.length, color: "text-white" },
+          {
+            label: "Total",
+            value: displayCustomOrders.length,
+            color: "text-white",
+          },
           {
             label: "Em Análise",
-            value: customOrders.filter((o) => o.status === "Em análise").length,
+            value: displayCustomOrders.filter((o) => o.status === "Em análise")
+              .length,
             color: "text-amber-400",
           },
           {
             label: "Em Produção",
-            value: customOrders.filter((o) => o.status === "Em produção")
+            value: displayCustomOrders.filter((o) => o.status === "Em produção")
               .length,
             color: "text-blue-400",
           },
           {
             label: "Aguard. Aprovação",
-            value: customOrders.filter(
+            value: displayCustomOrders.filter(
               (o) => o.status === "Aguardando aprovação",
             ).length,
             color: "text-violet-400",
@@ -352,7 +504,7 @@ export default function AdminCustomOrders() {
             "Qtd.",
             "Orçamento",
             "Status",
-            "Linha", // ✅ Nova coluna
+            "Linha",
             "Data",
             "",
           ]}
@@ -453,7 +605,6 @@ export default function AdminCustomOrders() {
       >
         {selected && (
           <div className="space-y-5">
-            {/* Mensagem de sucesso */}
             {successMessage && (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
                 <Check size={16} className="text-emerald-400 flex-shrink-0" />
@@ -463,7 +614,6 @@ export default function AdminCustomOrders() {
               </div>
             )}
 
-            {/* Mensagem de erro */}
             {validationError && (
               <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2">
                 <X size={16} className="text-red-400 flex-shrink-0" />
@@ -491,7 +641,6 @@ export default function AdminCustomOrders() {
                   label: "Data da Solicitação",
                   value: new Date(selected.date).toLocaleDateString("pt-BR"),
                 },
-                // ✅ Exibe a linha de produção
                 {
                   label: "Linha de Produção",
                   value: selected.productionLine
@@ -519,7 +668,6 @@ export default function AdminCustomOrders() {
               </p>
             </div>
 
-            {/* Orçamento */}
             <div className="glass-light rounded-xl p-4 border border-[#D4AF37]/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -549,7 +697,6 @@ export default function AdminCustomOrders() {
               </div>
             </div>
 
-            {/* AÇÕES RÁPIDAS */}
             <div>
               <div className="text-xs text-slate-500 mb-2 uppercase tracking-wider">
                 Ações Rápidas
@@ -577,7 +724,6 @@ export default function AdminCustomOrders() {
                     </Button>
                   )}
 
-                {/* ✅ Botão para escolher linha de produção */}
                 {selected.status !== "Em produção" &&
                   selected.status !== "Finalizado" && (
                     <Button
@@ -592,7 +738,6 @@ export default function AdminCustomOrders() {
               </div>
             </div>
 
-            {/* Botões inferiores */}
             <div className="flex gap-3 pt-2">
               <Button
                 variant="secondary"
@@ -1048,7 +1193,6 @@ export default function AdminCustomOrders() {
             </select>
           </div>
 
-          {/* ✅ Seleção de linha de produção na criação */}
           <div>
             <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
               Linha de Produção (opcional)

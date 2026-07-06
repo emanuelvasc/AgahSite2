@@ -27,26 +27,76 @@ import {
 function RevenueChart({ data }) {
   const max = Math.max(...data.map((d) => d.revenue));
   return (
-    <div className="flex items-end gap-2 h-36 mt-4">
-      {data.map((d, i) => (
-        <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
-          <div
-            className="w-full rounded-t-md transition-all relative group"
-            style={{
-              height: `${(d.revenue / max) * 100}%`,
-              background:
-                i === data.length - 1
-                  ? "linear-gradient(180deg,#D4AF37,#b08526)"
-                  : "rgba(255,255,255,0.08)",
-            }}
-          >
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-[#1e1e1e] rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10 z-10">
-              R$ {(d.revenue / 1000).toFixed(1)}k
+    <div className="w-full mt-6">
+      {/* Gráfico - BARRAS MAIS ALTAS */}
+      <div className="flex items-end gap-5 h-72">
+        {data.map((d, i) => {
+          const percentage = (d.revenue / max) * 100;
+          const isLast = i === data.length - 1;
+          return (
+            <div
+              key={d.month}
+              className="flex-1 flex flex-col items-center gap-3 group"
+            >
+              {/* Barra */}
+              <div
+                className="w-full rounded-xl transition-all relative cursor-pointer"
+                style={{
+                  height: `${Math.max(percentage, 4)}%`,
+                  background: isLast
+                    ? "linear-gradient(180deg, #D4AF37, #b08526)"
+                    : "linear-gradient(180deg, #D4AF37, rgba(212,175,55,0.12))",
+                  opacity: isLast ? 1 : 0.7,
+                  minHeight: "8px",
+                  boxShadow: isLast
+                    ? "0 0 40px rgba(212,175,55,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"
+                    : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                  border: isLast
+                    ? "1px solid rgba(212,175,55,0.3)"
+                    : "1px solid rgba(255,255,255,0.05)",
+                }}
+              >
+                {/* Tooltip com valor */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-[#1a1a1a] rounded-xl text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10 z-10 shadow-2xl">
+                  <div className="font-bold text-[#D4AF37] text-sm">
+                    R$ {(d.revenue / 1000).toFixed(1)}k
+                  </div>
+                  <div className="text-[10px] text-slate-400">{d.month}</div>
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a1a] rotate-45 border-r border-b border-white/10" />
+                </div>
+
+                {/* Valor na barra (apenas para a última) */}
+                {isLast && (
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 text-sm font-bold text-[#D4AF37] whitespace-nowrap">
+                    R$ {(d.revenue / 1000).toFixed(1)}k
+                  </div>
+                )}
+              </div>
+
+              {/* Mês */}
+              <span className="text-sm font-medium text-slate-400">
+                {d.month}
+              </span>
             </div>
-          </div>
-          <span className="text-[10px] text-slate-600">{d.month}</span>
+          );
+        })}
+      </div>
+
+      {/* Legenda */}
+      <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-white/5">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#D4AF37]" />
+          <span className="text-xs text-slate-500">Receita</span>
         </div>
-      ))}
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#D4AF37] opacity-40" />
+          <span className="text-xs text-slate-500">Média</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-emerald-400" />
+          <span className="text-xs text-slate-500">Meta</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -54,14 +104,14 @@ function RevenueChart({ data }) {
 function ProductionBar({ data }) {
   const max = Math.max(...data.map((d) => d.count));
   return (
-    <div className="space-y-3 mt-4">
+    <div className="space-y-3.5 mt-4">
       {data.map((d) => (
         <div key={d.stage}>
           <div className="flex justify-between text-xs mb-1.5">
             <span className="text-slate-400">{d.stage}</span>
             <span className="text-white font-semibold">{d.count}</span>
           </div>
-          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${(d.count / max) * 100}%` }}
@@ -125,28 +175,33 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-        {/* Revenue Chart */}
-        <Card className="xl:col-span-2">
+        {/* Revenue Chart - BARRAS MAIS ALTAS */}
+        <Card className="xl:col-span-2 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold font-display text-white">
+              <h2 className="text-xl font-bold font-display text-white">
                 Receita Mensal
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Últimos 7 meses</p>
+              <p className="text-sm text-slate-500 mt-1">Últimos 7 meses</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-              <TrendingUp size={14} />
-              +15.2%
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-sm text-emerald-400 font-semibold bg-emerald-500/10 px-4 py-2 rounded-full">
+                <TrendingUp size={16} />
+                +15.2%
+              </div>
+              <div className="text-xs text-slate-500">📈 Meta: R$ 52k</div>
             </div>
           </div>
           <RevenueChart data={revenueChartData} />
         </Card>
 
         {/* Production */}
-        <Card>
+        <Card className="p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold font-display text-white">Produção</h2>
-            <span className="text-xs text-slate-500">Por etapa</span>
+            <h2 className="text-xl font-bold font-display text-white">
+              Produção
+            </h2>
+            <span className="text-sm text-slate-500">Por etapa</span>
           </div>
           <ProductionBar data={productionData} />
         </Card>
@@ -156,14 +211,14 @@ export default function AdminDashboard() {
         {/* Recent Orders */}
         <div className="xl:col-span-2 glass rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold font-display text-white">
+            <h2 className="text-xl font-bold font-display text-white">
               Pedidos Recentes
             </h2>
             <a
               href="/admin/pedidos"
-              className="text-xs text-[#D4AF37] hover:text-[#e8c970] transition-colors flex items-center gap-1"
+              className="text-sm text-[#D4AF37] hover:text-[#e8c970] transition-colors flex items-center gap-1"
             >
-              Ver todos <ArrowUpRight size={12} />
+              Ver todos <ArrowUpRight size={16} />
             </a>
           </div>
           <Table headers={["Pedido", "Cliente", "Total", "Status", "Data"]}>
@@ -196,8 +251,8 @@ export default function AdminDashboard() {
 
         {/* Alerts */}
         <div className="space-y-4">
-          <Card>
-            <h2 className="font-semibold font-display text-white mb-4">
+          <Card className="p-6">
+            <h2 className="text-xl font-bold font-display text-white mb-4">
               Alertas
             </h2>
             <div className="space-y-3">
@@ -220,10 +275,10 @@ export default function AdminDashboard() {
               ].map((alert, i) => (
                 <div
                   key={i}
-                  className={`flex items-start gap-3 p-3 rounded-xl text-sm ${alert.type === "warn" ? "bg-amber-500/8 border border-amber-500/15" : "bg-blue-500/8 border border-blue-500/15"}`}
+                  className={`flex items-start gap-3 p-4 rounded-xl text-sm ${alert.type === "warn" ? "bg-amber-500/8 border border-amber-500/15" : "bg-blue-500/8 border border-blue-500/15"}`}
                 >
                   <AlertCircle
-                    size={15}
+                    size={18}
                     className={
                       alert.type === "warn"
                         ? "text-amber-400 flex-shrink-0 mt-0.5"
@@ -236,8 +291,8 @@ export default function AdminDashboard() {
                     >
                       {alert.text}
                     </p>
-                    <p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1">
-                      <Clock size={10} />
+                    <p className="text-xs text-slate-600 mt-1 flex items-center gap-1">
+                      <Clock size={12} />
                       {alert.time} atrás
                     </p>
                   </div>
@@ -247,8 +302,10 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Quick stats */}
-          <Card>
-            <h2 className="font-semibold font-display text-white mb-4">Hoje</h2>
+          <Card className="p-6">
+            <h2 className="text-xl font-bold font-display text-white mb-4">
+              Hoje
+            </h2>
             <div className="space-y-3">
               {[
                 { label: "Novos pedidos", value: "4" },
@@ -258,7 +315,7 @@ export default function AdminDashboard() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex justify-between items-center"
+                  className="flex justify-between items-center py-1.5 border-b border-white/5 last:border-0"
                 >
                   <span className="text-sm text-slate-500">{item.label}</span>
                   <span className="text-sm font-semibold text-white">

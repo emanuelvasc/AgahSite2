@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { StatusBadge, Button, Modal, Card } from "../../components/ui";
 import { events } from "../../data/mockData";
+import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 
 // URLs das imagens para cada evento
 const eventImages = {
@@ -27,7 +29,6 @@ const eventImages = {
   4: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsfzo0PNjsgZ8Rwan2Fe7xh8kFZ_QHFj-0MXtTXA2z5nGghzppgEY4dcJC&s=10",
 };
 
-// Mapeamento dos novos nomes dos eventos
 const eventNames = {
   1: "Corre Pela Vida",
   2: "Agah Night Run",
@@ -35,7 +36,6 @@ const eventNames = {
   4: "10KM Run",
 };
 
-// Posições das imagens para cada evento
 const imagePositions = {
   1: "center 40%",
   2: "center 40%",
@@ -149,7 +149,6 @@ function EventCard({ event, onClick }) {
   );
 }
 
-// ─── COMPONENTE DE PAGAMENTO ──────────────────────────────
 function PaymentSection({
   event,
   onConfirm,
@@ -161,7 +160,7 @@ function PaymentSection({
   const [loading, setLoading] = useState(false);
   const [paid, setPaid] = useState(false);
   const [showPix, setShowPix] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos em segundos
+  const [timeLeft, setTimeLeft] = useState(600);
   const [copied, setCopied] = useState(false);
 
   const paymentMethods = [
@@ -174,12 +173,10 @@ function PaymentSection({
     },
   ];
 
-  // Chave PIX simulada
   const pixKey = "agah@agahsports.com.br";
   const pixQrCode =
     "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=agah@agahsports.com.br";
 
-  // ✅ CONTADOR REGRESSIVO - CORRIGIDO COM useEffect
   useEffect(() => {
     if (showPix && timeLeft > 0) {
       const timer = setTimeout(() => {
@@ -189,7 +186,6 @@ function PaymentSection({
     }
   }, [timeLeft, showPix]);
 
-  // Formata o tempo
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -198,13 +194,11 @@ function PaymentSection({
 
   const handlePayment = async () => {
     if (paymentMethod === "pix") {
-      // Abre a interface PIX e reseta o timer
       setShowPix(true);
       setTimeLeft(600);
       return;
     }
 
-    // Para cartão de crédito
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1800));
     setLoading(false);
@@ -251,7 +245,6 @@ function PaymentSection({
     );
   }
 
-  // ─── TELA PIX ──────────────────────────────────────────────
   if (showPix) {
     const isExpired = timeLeft <= 0;
 
@@ -267,14 +260,12 @@ function PaymentSection({
           </p>
         </div>
 
-        {/* QR Code */}
         <div className="flex justify-center">
           <div className="bg-white p-3 rounded-2xl">
             <img src={pixQrCode} alt="QR Code PIX" className="w-48 h-48" />
           </div>
         </div>
 
-        {/* Chave PIX */}
         <div className="glass-light rounded-xl p-3">
           <div className="text-xs text-slate-400 mb-1">Chave PIX (E-mail)</div>
           <div className="flex items-center gap-2">
@@ -297,7 +288,6 @@ function PaymentSection({
           )}
         </div>
 
-        {/* Timer - AGORA FUNCIONANDO */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-2">
             <div
@@ -311,7 +301,6 @@ function PaymentSection({
               ? "⏰ Tempo esgotado!"
               : "⏱️ Tempo restante para pagamento"}
           </div>
-          {/* Barra de progresso do tempo */}
           <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-1000"
@@ -323,7 +312,6 @@ function PaymentSection({
           </div>
         </div>
 
-        {/* Valor */}
         <div className="glass-light rounded-xl p-3 text-center">
           <div className="text-xs text-slate-400">Valor a pagar</div>
           <div className="text-2xl font-bold text-[#D4AF37]">
@@ -331,7 +319,6 @@ function PaymentSection({
           </div>
         </div>
 
-        {/* Botões */}
         <div className="flex gap-3">
           <Button
             variant="secondary"
@@ -371,7 +358,6 @@ function PaymentSection({
     );
   }
 
-  // ─── TELA PRINCIPAL DE PAGAMENTO ──────────────────────────
   return (
     <div className="space-y-5">
       <div className="glass-light rounded-xl p-4 space-y-2 border border-white/8">
@@ -417,9 +403,7 @@ function PaymentSection({
                 className={`mx-auto mb-1 ${paymentMethod === method.id ? "text-[#D4AF37]" : "text-slate-400"}`}
               />
               <div
-                className={`text-[9px] font-semibold ${
-                  paymentMethod === method.id ? "text-white" : "text-slate-400"
-                }`}
+                className={`text-[9px] font-semibold ${paymentMethod === method.id ? "text-white" : "text-slate-400"}`}
               >
                 {method.label}
               </div>
@@ -502,6 +486,8 @@ function PaymentSection({
 }
 
 export default function ClientEvents() {
+  const { addEventRegistration } = useApp();
+  const { user } = useAuth();
   const [selected, setSelected] = useState(null);
   const [registered, setRegistered] = useState({});
   const [registering, setRegistering] = useState(false);
@@ -515,7 +501,23 @@ export default function ClientEvents() {
 
   const handleRegister = async () => {
     setRegistering(true);
-    await new Promise((r) => setTimeout(r, 1400));
+
+    // ✅ SALVA A INSCRIÇÃO NO BANCO/ESTADO
+    const registration = {
+      id: Date.now(),
+      eventId: selected.id,
+      eventName: selected.displayName || selected.name,
+      clientId: user?.id || 1,
+      clientName: user?.name || "Cliente",
+      distance: selectedDistance,
+      shirtSize: selectedSize,
+      price: selected.price,
+      status: "Confirmada",
+      date: new Date().toISOString(),
+    };
+
+    await addEventRegistration(registration);
+
     setRegistered((prev) => ({ ...prev, [selected.id]: true }));
     setRegistering(false);
     setRegDone(true);
@@ -555,7 +557,6 @@ export default function ClientEvents() {
         </p>
       </div>
 
-      {/* Featured banner */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -617,7 +618,6 @@ export default function ClientEvents() {
         </div>
       </motion.div>
 
-      {/* Modal de Detalhes do Evento em Destaque */}
       <Modal
         isOpen={showFeaturedDetails}
         onClose={() => setShowFeaturedDetails(false)}
@@ -746,7 +746,6 @@ export default function ClientEvents() {
         </div>
       </Modal>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
         {displayEvents.map((event, i) => (
           <motion.div
@@ -769,7 +768,6 @@ export default function ClientEvents() {
         ))}
       </div>
 
-      {/* Event detail modal com pagamento */}
       <Modal
         isOpen={!!selected}
         onClose={() => {
@@ -810,7 +808,6 @@ export default function ClientEvents() {
                 selectedSize={selectedSize}
               />
             ) : (
-              // Detalhes do evento
               <>
                 <div className="glass-light rounded-xl overflow-hidden">
                   <div

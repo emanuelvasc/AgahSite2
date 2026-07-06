@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { dataService } from "../services/dataService";
 import { useAuth } from "./AuthContext";
 
-// Dados iniciais para fallback (caso Supabase falhe)
+// Dados iniciais simulados
 import {
   products as initialProducts,
   clients as initialClients,
@@ -20,106 +19,151 @@ export function AppProvider({ children }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  // ─── ESTADOS ──────────────────────────────────────────────
-  const [products, setProducts] = useState(initialProducts);
-  const [clients, setClients] = useState(initialClients);
-  const [orders, setOrders] = useState(initialOrders);
-  const [customOrders, setCustomOrders] = useState(initialCustomOrders);
-  const [messages, setMessages] = useState(initialMessages);
-  const [suppliers, setSuppliers] = useState(initialSuppliers);
-  const [events, setEvents] = useState(initialEvents);
-  const [eventRegistrations, setEventRegistrations] = useState(
-    initialEventRegistrations,
-  );
-  const [cart, setCart] = useState([]);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      text: "Novo pedido recebido: PED-2025-006",
-      time: "5 min",
-      read: false,
-    },
-    {
-      id: 2,
-      text: "Encomenda ENC-2025-003 aguarda aprovação",
-      time: "1h",
-      read: false,
-    },
-    {
-      id: 3,
-      text: "Estoque baixo: Jaqueta Corta Vento (43 un.)",
-      time: "3h",
-      read: true,
-    },
-  ]);
+  // ─── ESTADOS COM LOCALSTORAGE ────────────────────────────
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem("agah_products");
+    return saved ? JSON.parse(saved) : initialProducts;
+  });
 
-  // ─── CARREGAR DADOS DO SUPABASE ───────────────────────────
-  const loadAllData = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+  const [clients, setClients] = useState(() => {
+    const saved = localStorage.getItem("agah_clients");
+    return saved ? JSON.parse(saved) : initialClients;
+  });
 
-    setLoading(true);
-    try {
-      const [
-        productsData,
-        clientsData,
-        ordersData,
-        customOrdersData,
-        suppliersData,
-        notificationsData,
-      ] = await Promise.all([
-        dataService.getProducts(),
-        dataService.getClients(user.id),
-        dataService.getOrders(user.id),
-        dataService.getCustomOrders(user.id),
-        dataService.getSuppliers(user.id),
-        dataService.getNotifications(user.id),
-      ]);
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem("agah_orders");
+    return saved ? JSON.parse(saved) : initialOrders;
+  });
 
-      if (productsData) setProducts(productsData);
-      if (clientsData) setClients(clientsData);
-      if (ordersData) setOrders(ordersData);
-      if (customOrdersData) setCustomOrders(customOrdersData);
-      if (suppliersData) setSuppliers(suppliersData);
-      if (notificationsData) setNotifications(notificationsData);
-    } catch (error) {
-      console.error("Erro ao carregar dados do Supabase:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [customOrders, setCustomOrders] = useState(() => {
+    const saved = localStorage.getItem("agah_custom_orders");
+    return saved ? JSON.parse(saved) : initialCustomOrders;
+  });
 
-  // Carregar dados quando o usuário mudar
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem("agah_messages");
+    return saved ? JSON.parse(saved) : initialMessages;
+  });
+
+  const [suppliers, setSuppliers] = useState(() => {
+    const saved = localStorage.getItem("agah_suppliers");
+    return saved ? JSON.parse(saved) : initialSuppliers;
+  });
+
+  const [events, setEvents] = useState(() => {
+    const saved = localStorage.getItem("agah_events");
+    return saved ? JSON.parse(saved) : initialEvents;
+  });
+
+  const [eventRegistrations, setEventRegistrations] = useState(() => {
+    const saved = localStorage.getItem("agah_event_registrations");
+    return saved ? JSON.parse(saved) : initialEventRegistrations;
+  });
+
+  const [cart, setCart] = useState(() => {
+    const saved = localStorage.getItem("agah_cart");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem("agah_notifications");
+    return saved
+      ? JSON.parse(saved)
+      : [
+          {
+            id: 1,
+            text: "Novo pedido recebido: PED-2025-006",
+            time: "5 min",
+            read: false,
+          },
+          {
+            id: 2,
+            text: "Encomenda ENC-2025-003 aguarda aprovação",
+            time: "1h",
+            read: false,
+          },
+          {
+            id: 3,
+            text: "Estoque baixo: Jaqueta Corta Vento (43 un.)",
+            time: "3h",
+            read: true,
+          },
+        ];
+  });
+
+  // ─── SALVAR NO LOCALSTORAGE SEMPRE QUE MUDAR ──────────────
   useEffect(() => {
-    loadAllData();
+    localStorage.setItem("agah_products", JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_clients", JSON.stringify(clients));
+  }, [clients]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_orders", JSON.stringify(orders));
+  }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_custom_orders", JSON.stringify(customOrders));
+  }, [customOrders]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_suppliers", JSON.stringify(suppliers));
+  }, [suppliers]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_cart", JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_notifications", JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_messages", JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem("agah_events", JSON.stringify(events));
+  }, [events]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "agah_event_registrations",
+      JSON.stringify(eventRegistrations),
+    );
+  }, [eventRegistrations]);
+
+  // ─── CARREGAR DADOS AO FAZER LOGIN ────────────────────────
+  useEffect(() => {
+    if (user) {
+      // Recarrega todos os dados do localStorage
+      const savedProducts = localStorage.getItem("agah_products");
+      const savedClients = localStorage.getItem("agah_clients");
+      const savedOrders = localStorage.getItem("agah_orders");
+      const savedCustomOrders = localStorage.getItem("agah_custom_orders");
+      const savedSuppliers = localStorage.getItem("agah_suppliers");
+      const savedEvents = localStorage.getItem("agah_events");
+      const savedRegistrations = localStorage.getItem(
+        "agah_event_registrations",
+      );
+
+      if (savedProducts) setProducts(JSON.parse(savedProducts));
+      if (savedClients) setClients(JSON.parse(savedClients));
+      if (savedOrders) setOrders(JSON.parse(savedOrders));
+      if (savedCustomOrders) setCustomOrders(JSON.parse(savedCustomOrders));
+      if (savedSuppliers) setSuppliers(JSON.parse(savedSuppliers));
+      if (savedEvents) setEvents(JSON.parse(savedEvents));
+      if (savedRegistrations)
+        setEventRegistrations(JSON.parse(savedRegistrations));
+
+      setLoading(false);
+    } else {
+      // Quando desloga, mantém os dados no localStorage mas limpa o loading
+      setLoading(false);
+    }
   }, [user]);
-
-  // ─── PERSISTÊNCIA LOCAL ────────────────────────────────────
-  useEffect(() => {
-    if (!loading && user) {
-      localStorage.setItem("agah_products", JSON.stringify(products));
-    }
-  }, [products, loading, user]);
-
-  useEffect(() => {
-    if (!loading && user) {
-      localStorage.setItem("agah_clients", JSON.stringify(clients));
-    }
-  }, [clients, loading, user]);
-
-  useEffect(() => {
-    if (!loading && user) {
-      localStorage.setItem("agah_orders", JSON.stringify(orders));
-    }
-  }, [orders, loading, user]);
-
-  useEffect(() => {
-    if (!loading && user) {
-      localStorage.setItem("agah_custom_orders", JSON.stringify(customOrders));
-    }
-  }, [customOrders, loading, user]);
 
   // ─── CARRINHO ──────────────────────────────────────────────
   const addToCart = (product, qty = 1, size, color) => {
@@ -138,90 +182,46 @@ export function AppProvider({ children }) {
     setCart((prev) => prev.filter((i) => i.key !== key));
   const updateCartQty = (key, qty) =>
     setCart((prev) => prev.map((i) => (i.key === key ? { ...i, qty } : i)));
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    localStorage.removeItem("agah_cart");
+  };
 
   const cartTotal = cart.reduce((acc, i) => acc + i.product.price * i.qty, 0);
   const cartCount = cart.reduce((acc, i) => acc + i.qty, 0);
 
   // ─── CLIENTES ──────────────────────────────────────────────
-  const addClient = async (client) => {
-    try {
-      const newClient = await dataService.createClient({
-        ...client,
-        user_id: user.id,
-      });
-      setClients((prev) => [newClient, ...prev]);
-      return newClient;
-    } catch (error) {
-      console.error("Erro ao adicionar cliente:", error);
-      const newClient = { ...client, id: Date.now() };
-      setClients((prev) => [...prev, newClient]);
-      return newClient;
-    }
+  const addClient = (client) => {
+    const newClient = { ...client, id: Date.now() };
+    setClients((prev) => [...prev, newClient]);
+    return newClient;
   };
 
-  const deleteClient = async (id) => {
-    try {
-      await dataService.deleteClient(id);
-      setClients((prev) => prev.filter((c) => c.id !== id));
-    } catch (error) {
-      console.error("Erro ao deletar cliente:", error);
-      setClients((prev) => prev.filter((c) => c.id !== id));
-    }
+  const deleteClient = (id) => {
+    setClients((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const updateClient = async (id, updatedData) => {
-    try {
-      const updated = await dataService.updateClient(id, updatedData);
-      setClients((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...updated } : c)),
-      );
-      return updated;
-    } catch (error) {
-      console.error("Erro ao atualizar cliente:", error);
-      setClients((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...updatedData } : c)),
-      );
-    }
+  const updateClient = (id, updatedData) => {
+    setClients((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...updatedData } : c)),
+    );
   };
 
   // ─── PRODUTOS ──────────────────────────────────────────────
-  const addProduct = async (product) => {
-    try {
-      const newProduct = await dataService.createProduct(product);
-      setProducts((prev) => [newProduct, ...prev]);
-      return newProduct;
-    } catch (error) {
-      console.error("Erro ao adicionar produto:", error);
-      const newProduct = { ...product, id: Date.now() };
-      setProducts((prev) => [...prev, newProduct]);
-      return newProduct;
-    }
+  const addProduct = (product) => {
+    const newProduct = { ...product, id: Date.now() };
+    setProducts((prev) => [...prev, newProduct]);
+    return newProduct;
   };
 
-  const deleteProduct = async (id) => {
-    try {
-      await dataService.deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (error) {
-      console.error("Erro ao deletar produto:", error);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    }
+  const deleteProduct = (id) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const updateProduct = async (id, updatedData) => {
-    try {
-      const updated = await dataService.updateProduct(id, updatedData);
-      setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updated } : p)),
-      );
-      return updated;
-    } catch (error) {
-      console.error("Erro ao atualizar produto:", error);
-      setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p)),
-      );
-    }
+  const updateProduct = (id, updatedData) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updatedData } : p)),
+    );
   };
 
   // ─── NOTIFICAÇÕES ──────────────────────────────────────────
@@ -232,139 +232,88 @@ export function AppProvider({ children }) {
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
   // ─── PEDIDOS ──────────────────────────────────────────────
-  const addOrder = async (order) => {
-    try {
-      const newOrder = await dataService.createOrder({
-        ...order,
-        user_id: user.id,
-      });
-      setOrders((prev) => [newOrder, ...prev]);
-      return newOrder;
-    } catch (error) {
-      console.error("Erro ao adicionar pedido:", error);
-      const newOrder = { ...order, id: `PED-${Date.now()}` };
-      setOrders((prev) => [...prev, newOrder]);
-      return newOrder;
-    }
+  const addOrder = (order) => {
+    const maxId = orders.reduce((max, o) => {
+      const num = parseInt(o.id?.replace("PED-", "") || "0");
+      return Math.max(max, num);
+    }, 0);
+
+    const newOrder = {
+      ...order,
+      id: `PED-${String(maxId + 1).padStart(4, "0")}`,
+      date: new Date().toISOString(),
+    };
+    setOrders((prev) => [...prev, newOrder]);
+    return newOrder;
   };
 
-  const updateOrderStatus = async (id, status) => {
-    try {
-      await dataService.updateOrder(id, { status });
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, status } : o)),
-      );
-    } catch (error) {
-      console.error("Erro ao atualizar status do pedido:", error);
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, status } : o)),
-      );
-    }
+  const updateOrderStatus = (id, status) => {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
-  const updateOrder = async (id, updatedData) => {
-    try {
-      const updated = await dataService.updateOrder(id, updatedData);
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, ...updated } : o)),
-      );
-      return updated;
-    } catch (error) {
-      console.error("Erro ao atualizar pedido:", error);
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, ...updatedData } : o)),
-      );
-    }
+  const updateOrder = (id, updatedData) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, ...updatedData } : o)),
+    );
   };
 
   // ─── ENCOMENDAS ──────────────────────────────────────────────
-  const addCustomOrder = async (order) => {
-    try {
-      const newOrder = await dataService.createCustomOrder({
-        ...order,
-        user_id: user.id,
-      });
-      setCustomOrders((prev) => [newOrder, ...prev]);
-      return newOrder;
-    } catch (error) {
-      console.error("Erro ao adicionar encomenda:", error);
-      const newOrder = { ...order, id: `ENC-${Date.now()}` };
-      setCustomOrders((prev) => [...prev, newOrder]);
-      return newOrder;
-    }
+  const addCustomOrder = (order) => {
+    const newOrder = { ...order, id: Date.now() };
+    setCustomOrders((prev) => [...prev, newOrder]);
+    return newOrder;
   };
 
-  const updateCustomOrder = async (id, updatedData) => {
-    try {
-      const updated = await dataService.updateCustomOrder(id, updatedData);
-      setCustomOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, ...updated } : o)),
-      );
-      return updated;
-    } catch (error) {
-      console.error("Erro ao atualizar encomenda:", error);
-      setCustomOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, ...updatedData } : o)),
-      );
-    }
+  const updateCustomOrder = (id, updatedData) => {
+    setCustomOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, ...updatedData } : o)),
+    );
   };
 
   // ─── FORNECEDORES ────────────────────────────────────────────
-  const addSupplier = async (supplier) => {
-    try {
-      const newSupplier = await dataService.createSupplier({
-        ...supplier,
-        user_id: user.id,
-      });
-      setSuppliers((prev) => [newSupplier, ...prev]);
-      return newSupplier;
-    } catch (error) {
-      console.error("Erro ao adicionar fornecedor:", error);
-      const newSupplier = { ...supplier, id: Date.now() };
-      setSuppliers((prev) => [...prev, newSupplier]);
-      return newSupplier;
-    }
+  const addSupplier = (supplier) => {
+    const newSupplier = { ...supplier, id: Date.now() };
+    setSuppliers((prev) => [...prev, newSupplier]);
+    return newSupplier;
   };
 
-  const updateSupplier = async (id, updatedData) => {
-    try {
-      const updated = await dataService.updateSupplier(id, updatedData);
-      setSuppliers((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, ...updated } : s)),
-      );
-      return updated;
-    } catch (error) {
-      console.error("Erro ao atualizar fornecedor:", error);
-      setSuppliers((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s)),
-      );
-    }
+  const updateSupplier = (id, updatedData) => {
+    setSuppliers((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s)),
+    );
   };
 
-  const deleteSupplier = async (id) => {
-    try {
-      await dataService.deleteSupplier(id);
-      setSuppliers((prev) => prev.filter((s) => s.id !== id));
-    } catch (error) {
-      console.error("Erro ao deletar fornecedor:", error);
-      setSuppliers((prev) => prev.filter((s) => s.id !== id));
-    }
+  const deleteSupplier = (id) => {
+    setSuppliers((prev) => prev.filter((s) => s.id !== id));
   };
 
   // ─── EVENTOS ──────────────────────────────────────────────
   const addEventRegistration = (registration) => {
-    setEventRegistrations((prev) => [...prev, registration]);
+    const newRegistration = { ...registration, id: Date.now() };
+    setEventRegistrations((prev) => [...prev, newRegistration]);
+    // Atualiza o número de participantes no evento
     setEvents((prev) =>
       prev.map((e) =>
         e.id === registration.eventId
-          ? { ...e, participants: e.participants + 1 }
+          ? { ...e, participants: (e.participants || 0) + 1 }
           : e,
       ),
     );
+    return newRegistration;
   };
 
+  // ─── RECARREGAR DADOS ──────────────────────────────────────
   const reloadData = () => {
-    loadAllData();
+    setProducts(JSON.parse(localStorage.getItem("agah_products") || "[]"));
+    setClients(JSON.parse(localStorage.getItem("agah_clients") || "[]"));
+    setOrders(JSON.parse(localStorage.getItem("agah_orders") || "[]"));
+    setCustomOrders(
+      JSON.parse(localStorage.getItem("agah_custom_orders") || "[]"),
+    );
+    setSuppliers(JSON.parse(localStorage.getItem("agah_suppliers") || "[]"));
+    setNotifications(
+      JSON.parse(localStorage.getItem("agah_notifications") || "[]"),
+    );
   };
 
   return (

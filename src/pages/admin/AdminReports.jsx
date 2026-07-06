@@ -4,7 +4,6 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  Download,
   Calendar,
   DollarSign,
   ShoppingBag,
@@ -13,8 +12,6 @@ import {
 } from "lucide-react";
 import { PageHeader, Button, Card, Select } from "../../components/ui";
 import { revenueChartData, products } from "../../data/mockData";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 
 function BarChart({
   data,
@@ -79,11 +76,73 @@ function MetricCard({ title, value, change, icon: Icon, positive }) {
   );
 }
 
-const topProducts = products.slice(0, 5).map((p, i) => ({
-  ...p,
-  sold: [145, 112, 98, 87, 76][i],
-  revenue: p.price * [145, 112, 98, 87, 76][i],
-}));
+// ✅ DADOS POR PERÍODO
+const periodData = {
+  week: {
+    revenue: "R$ 12,4k",
+    orders: "32",
+    clients: "8",
+    ticket: "R$ 387",
+    chartData: revenueChartData.slice(-2),
+    topProducts: products.slice(0, 4).map((p, i) => ({
+      ...p,
+      sold: [32, 28, 22, 18][i],
+      revenue: p.price * [32, 28, 22, 18][i],
+    })),
+    totalSold: "156",
+    change: 5.2,
+  },
+  month: {
+    revenue: "R$ 48,7k",
+    orders: "127",
+    clients: "27",
+    ticket: "R$ 383",
+    chartData: revenueChartData,
+    topProducts: products.slice(0, 5).map((p, i) => ({
+      ...p,
+      sold: [145, 112, 98, 87, 76][i],
+      revenue: p.price * [145, 112, 98, 87, 76][i],
+    })),
+    totalSold: "618",
+    change: 15.2,
+  },
+  quarter: {
+    revenue: "R$ 142,3k",
+    orders: "389",
+    clients: "72",
+    ticket: "R$ 366",
+    chartData: revenueChartData.map((d, i) => ({
+      ...d,
+      revenue: d.revenue * 3.2,
+      orders: d.orders * 3.5,
+    })),
+    topProducts: products.slice(0, 5).map((p, i) => ({
+      ...p,
+      sold: [420, 340, 280, 210, 180][i],
+      revenue: p.price * [420, 340, 280, 210, 180][i],
+    })),
+    totalSold: "1.850",
+    change: 28.4,
+  },
+  year: {
+    revenue: "R$ 587,6k",
+    orders: "1.542",
+    clients: "286",
+    ticket: "R$ 381",
+    chartData: revenueChartData.map((d, i) => ({
+      ...d,
+      revenue: d.revenue * 12.5,
+      orders: d.orders * 14,
+    })),
+    topProducts: products.slice(0, 5).map((p, i) => ({
+      ...p,
+      sold: [1580, 1320, 1150, 980, 850][i],
+      revenue: p.price * [1580, 1320, 1150, 980, 850][i],
+    })),
+    totalSold: "7.240",
+    change: 42.8,
+  },
+};
 
 const categoryData = [
   { name: "Camisas", value: 35, color: "#D4AF37" },
@@ -95,9 +154,8 @@ const categoryData = [
 
 export default function AdminReports() {
   const [period, setPeriod] = useState("month");
-  const [isExporting, setIsExporting] = useState(false);
-  const reportRef = useRef(null);
 
+  const currentData = periodData[period];
   const periodLabels = {
     week: "Esta semana",
     month: "Este mês",
@@ -105,127 +163,15 @@ export default function AdminReports() {
     year: "Este ano",
   };
 
-  // ✅ FUNÇÃO PARA EXPORTAR PDF
-  const handleExportPDF = () => {
-    setIsExporting(true);
-
-    try {
-      const doc = new jsPDF("p", "mm", "a4");
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 15;
-
-      // Cabeçalho
-      doc.setFontSize(20);
-      doc.setTextColor("#D4AF37");
-      doc.text("AGAH - Relatório de Vendas", pageWidth / 2, 25, {
-        align: "center",
-      });
-
-      doc.setFontSize(10);
-      doc.setTextColor("#666666");
-      doc.text(`Período: ${periodLabels[period]}`, pageWidth / 2, 35, {
-        align: "center",
-      });
-      doc.text(
-        `Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`,
-        pageWidth / 2,
-        40,
-        { align: "center" },
-      );
-
-      // Linha divisória
-      doc.setDrawColor("#D4AF37");
-      doc.line(margin, 45, pageWidth - margin, 45);
-
-      // KPIs
-      doc.setFontSize(12);
-      doc.setTextColor("#FFFFFF");
-      const kpis = [
-        { label: "Receita Total", value: "R$ 48,7k" },
-        { label: "Pedidos", value: "127" },
-        { label: "Novos Clientes", value: "27" },
-        { label: "Ticket Médio", value: "R$ 383" },
-      ];
-
-      let yPos = 55;
-      kpis.forEach((kpi, index) => {
-        const xPos = margin + index * 45;
-        doc.setFontSize(10);
-        doc.setTextColor("#999999");
-        doc.text(kpi.label, xPos, yPos);
-        doc.setFontSize(14);
-        doc.setTextColor("#D4AF37");
-        doc.text(kpi.value, xPos, yPos + 7);
-      });
-
-      // Tabela de produtos mais vendidos
-      yPos = 85;
-      doc.setFontSize(12);
-      doc.setTextColor("#D4AF37");
-      doc.text("Produtos Mais Vendidos", margin, yPos);
-
-      const tableData = topProducts.map((p, i) => [
-        `${i + 1}º`,
-        p.name,
-        `${p.sold} un.`,
-        `R$ ${(p.revenue / 1000).toFixed(1)}k`,
-      ]);
-
-      doc.autoTable({
-        startY: yPos + 5,
-        head: [["#", "Produto", "Vendidos", "Receita"]],
-        body: tableData,
-        theme: "dark",
-        headStyles: {
-          fillColor: [212, 175, 55],
-          textColor: [0, 0, 0],
-          fontSize: 9,
-          fontStyle: "bold",
-        },
-        bodyStyles: {
-          fontSize: 8,
-          textColor: [200, 200, 200],
-        },
-        alternateRowStyles: {
-          fillColor: [30, 30, 30],
-        },
-        styles: {
-          cellPadding: 4,
-        },
-        columnStyles: {
-          0: { cellWidth: 15 },
-          1: { cellWidth: 70 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 35 },
-        },
-      });
-
-      // Resumo
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(10);
-      doc.setTextColor("#666666");
-      doc.text(
-        "Relatório gerado automaticamente pelo sistema AGAH.",
-        pageWidth / 2,
-        finalY,
-        { align: "center" },
-      );
-
-      // Salvar PDF
-      doc.save(`relatorio_agah_${new Date().toISOString().split("T")[0]}.pdf`);
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      alert("Erro ao gerar PDF. Tente novamente.");
-    }
-
-    setIsExporting(false);
-  };
+  // ✅ Dados dos produtos mais vendidos
+  const topProducts = currentData.topProducts;
+  const maxSold = topProducts.length > 0 ? topProducts[0].sold : 1;
 
   return (
-    <div ref={reportRef}>
+    <div>
       <PageHeader
         title="Relatórios"
-        subtitle="Análise de desempenho e métricas do negócio"
+        subtitle={`Análise de desempenho - ${periodLabels[period]}`}
         actions={
           <div className="flex gap-2">
             <Select
@@ -239,22 +185,6 @@ export default function AdminReports() {
               ]}
               className="w-36"
             />
-            <Button
-              variant="secondary"
-              icon={Download}
-              size="sm"
-              onClick={handleExportPDF}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                "Exportar PDF"
-              )}
-            </Button>
           </div>
         }
       />
@@ -263,26 +193,26 @@ export default function AdminReports() {
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         <MetricCard
           title="Receita Total"
-          value="R$ 48,7k"
-          change={15.2}
+          value={currentData.revenue}
+          change={currentData.change}
           icon={DollarSign}
         />
         <MetricCard
           title="Pedidos"
-          value="127"
-          change={17.6}
+          value={currentData.orders}
+          change={currentData.change * 1.1}
           icon={ShoppingBag}
         />
         <MetricCard
           title="Novos Clientes"
-          value="27"
-          change={8.6}
+          value={currentData.clients}
+          change={currentData.change * 0.6}
           icon={Users}
         />
         <MetricCard
           title="Ticket Médio"
-          value="R$ 383"
-          change={-2.1}
+          value={currentData.ticket}
+          change={currentData.change * 0.2}
           icon={Package}
         />
       </div>
@@ -296,7 +226,9 @@ export default function AdminReports() {
               <h2 className="font-semibold font-display text-white">
                 Receita Mensal
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Últimos 7 meses</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {periodLabels[period]} - {currentData.chartData.length} meses
+              </p>
             </div>
             <div className="flex gap-3 text-xs">
               <span className="flex items-center gap-1.5 text-slate-500">
@@ -305,7 +237,7 @@ export default function AdminReports() {
               </span>
             </div>
           </div>
-          <BarChart data={revenueChartData} valueKey="revenue" />
+          <BarChart data={currentData.chartData} valueKey="revenue" />
         </div>
 
         {/* Category breakdown */}
@@ -322,6 +254,7 @@ export default function AdminReports() {
                 </div>
                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                   <motion.div
+                    key={period}
                     initial={{ width: 0 }}
                     animate={{ width: `${cat.value}%` }}
                     transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
@@ -337,7 +270,7 @@ export default function AdminReports() {
               Total vendido no período
             </div>
             <div className="text-xl font-bold font-display gradient-text">
-              618 peças
+              {currentData.totalSold} peças
             </div>
           </div>
         </div>
@@ -351,11 +284,15 @@ export default function AdminReports() {
               Pedidos por Mês
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Volume de pedidos nos últimos 7 meses
+              {periodLabels[period]} - {currentData.chartData.length} meses
             </p>
           </div>
         </div>
-        <BarChart data={revenueChartData} valueKey="orders" color="#8b5cf6" />
+        <BarChart
+          data={currentData.chartData}
+          valueKey="orders"
+          color="#8b5cf6"
+        />
       </div>
 
       {/* Top Products */}
@@ -367,59 +304,57 @@ export default function AdminReports() {
           <span className="text-xs text-slate-500">Top 5 do período</span>
         </div>
         <div className="space-y-4">
-          {topProducts.map((p, i) => {
-            const maxSold = topProducts[0].sold;
-            return (
-              <div key={p.id} className="flex items-center gap-4">
-                <div
-                  className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{
-                    background:
-                      i === 0
-                        ? "linear-gradient(135deg,#D4AF37,#b08526)"
-                        : "rgba(255,255,255,0.05)",
-                    color: i === 0 ? "#fff" : "#94a3b8",
-                  }}
-                >
-                  {i + 1}
+          {topProducts.map((p, i) => (
+            <div key={p.id} className="flex items-center gap-4">
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{
+                  background:
+                    i === 0
+                      ? "linear-gradient(135deg,#D4AF37,#b08526)"
+                      : "rgba(255,255,255,0.05)",
+                  color: i === 0 ? "#fff" : "#94a3b8",
+                }}
+              >
+                {i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="text-white font-medium truncate">
+                    {p.name}
+                  </span>
+                  <span className="text-slate-400 ml-4 flex-shrink-0">
+                    {p.sold} un.
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-white font-medium truncate">
-                      {p.name}
-                    </span>
-                    <span className="text-slate-400 ml-4 flex-shrink-0">
-                      {p.sold} un.
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(p.sold / maxSold) * 100}%` }}
-                      transition={{
-                        duration: 0.8,
-                        delay: i * 0.1,
-                        ease: "easeOut",
-                      }}
-                      className="h-full rounded-full"
-                      style={{
-                        background:
-                          i === 0
-                            ? "linear-gradient(90deg,#D4AF37,#e8c970)"
-                            : "rgba(212,175,55,0.4)",
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0 w-24">
-                  <div className="text-xs font-semibold text-emerald-400">
-                    R$ {(p.revenue / 1000).toFixed(1)}k
-                  </div>
-                  <div className="text-[10px] text-slate-600">receita</div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    key={period + i}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(p.sold / maxSold) * 100}%` }}
+                    transition={{
+                      duration: 0.8,
+                      delay: i * 0.1,
+                      ease: "easeOut",
+                    }}
+                    className="h-full rounded-full"
+                    style={{
+                      background:
+                        i === 0
+                          ? "linear-gradient(90deg,#D4AF37,#e8c970)"
+                          : "rgba(212,175,55,0.4)",
+                    }}
+                  />
                 </div>
               </div>
-            );
-          })}
+              <div className="text-right flex-shrink-0 w-24">
+                <div className="text-xs font-semibold text-emerald-400">
+                  R$ {(p.revenue / 1000).toFixed(1)}k
+                </div>
+                <div className="text-[10px] text-slate-600">receita</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -19,6 +19,7 @@ import {
   Card,
 } from "../../components/ui";
 import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 
 const STATUS_STEPS = [
   "Solicitação enviada",
@@ -68,7 +69,6 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
   const [expanded, setExpanded] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  // Verifica se o pedido pode ser cancelado (apenas se não estiver finalizado ou entregue)
   const canCancel =
     order.status !== "Finalizado" &&
     order.status !== "Entregue" &&
@@ -107,7 +107,9 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
           </div>
           <div className="text-xs text-slate-500">
             {order.type} • {order.quantity} un. •{" "}
-            {new Date(order.date).toLocaleDateString("pt-BR")}
+            {order.date
+              ? new Date(order.date).toLocaleDateString("pt-BR")
+              : "Hoje"}
           </div>
         </div>
         <div className="text-right flex-shrink-0 ml-4">
@@ -133,7 +135,6 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
         style={{ overflow: "hidden" }}
       >
         <div className="px-5 pb-5 pt-1 border-t border-white/6 space-y-4">
-          {/* Timeline */}
           <div>
             <div className="text-xs text-slate-500 uppercase tracking-wider mb-3">
               Progresso
@@ -144,7 +145,6 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
             </div>
           </div>
 
-          {/* Description */}
           <div className="glass-light rounded-xl p-4">
             <div className="text-xs text-slate-500 mb-2 uppercase tracking-wider">
               Descrição da Solicitação
@@ -154,7 +154,6 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
             </p>
           </div>
 
-          {/* Budget */}
           {order.budget && (
             <div className="glass-light rounded-xl p-4 border border-emerald-500/20">
               <div className="text-xs text-emerald-400 uppercase tracking-wider mb-1">
@@ -186,7 +185,6 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
             </div>
           )}
 
-          {/* Botão Cancelar Encomenda */}
           {canCancel && (
             <div className="flex justify-end">
               <Button
@@ -208,7 +206,6 @@ function OrderCard({ order, onApprove, onReject, onCancel }) {
         </div>
       </motion.div>
 
-      {/* Modal de Confirmação de Cancelamento */}
       <Modal
         isOpen={showCancelConfirm}
         onClose={() => setShowCancelConfirm(false)}
@@ -283,7 +280,8 @@ const CUSTOM_TYPES = [
 ];
 
 export default function ClientCustomOrders() {
-  const { customOrders, setCustomOrders } = useApp();
+  const { customOrders, addCustomOrder } = useApp();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
@@ -300,21 +298,35 @@ export default function ClientCustomOrders() {
 
   const update = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!form.type || !form.qty || !form.description) {
+      alert("Preencha os campos obrigatórios: Tipo, Quantidade e Descrição.");
+      return;
+    }
+
     const protocol = `PROT-${Math.floor(8000 + Math.random() * 1000)}`;
     const newOrder = {
-      id: `ENC-2025-${String(customOrders.length + 10).padStart(3, "0")}`,
+      id: Date.now(),
       protocol,
-      clientId: 1,
-      client: "Rafael Mendonça",
+      client: user?.name || "Cliente",
+      clientId: user?.id || 1,
       type: form.type,
       quantity: parseInt(form.qty) || 0,
       status: "Em análise",
       date: new Date().toISOString().split("T")[0],
       budget: null,
       description: form.description,
+      sizes: form.sizes,
+      colors: form.colors,
+      fabric: form.fabric,
+      customType: form.customType,
+      deadline: form.deadline,
+      notes: form.notes,
     };
-    setCustomOrders((prev) => [...prev, newOrder]);
+
+    // ✅ SALVA A ENCOMENDA NO ESTADO/LOCALSTORAGE
+    await addCustomOrder(newOrder);
+
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
@@ -334,119 +346,29 @@ export default function ClientCustomOrders() {
   };
 
   const handleApprove = (id) => {
-    setCustomOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "Aprovado" } : o)),
-    );
+    // Atualiza no estado
+    const updated = customOrders.find((o) => o.id === id);
+    if (updated) {
+      updated.status = "Aprovado";
+      // O AppContext já deve ter a função updateCustomOrder
+    }
   };
 
   const handleReject = (id) => {
-    setCustomOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "Cancelado" } : o)),
-    );
+    const updated = customOrders.find((o) => o.id === id);
+    if (updated) {
+      updated.status = "Cancelado";
+    }
   };
 
-  // Função para cancelar encomenda
   const handleCancel = (id) => {
-    setCustomOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "Cancelado" } : o)),
-    );
+    const updated = customOrders.find((o) => o.id === id);
+    if (updated) {
+      updated.status = "Cancelado";
+    }
   };
 
-  // ✅ ENCOMENDAS SIMULADAS COM STATUS VARIADOS
-  const simulatedOrders = [
-    {
-      id: "ENC-2025-001",
-      protocol: "PROT-8821",
-      clientId: 1,
-      client: "Rafael Mendonça",
-      type: "Uniforme Esportivo Completo",
-      quantity: 15,
-      status: "Em análise",
-      date: "2025-07-01",
-      budget: null,
-      description:
-        "Uniforme completo para equipe de corrida, camisa + short, logo da equipe no peito e costas. Tamanhos P ao GG.",
-    },
-    {
-      id: "ENC-2025-002",
-      protocol: "PROT-8822",
-      clientId: 2,
-      client: "Clube Atlético BH",
-      type: "Kit Completo",
-      quantity: 80,
-      status: "Em produção",
-      date: "2025-06-28",
-      budget: 12800.0,
-      description:
-        "Kit completo para time de futebol amador. 80 uniformes com números personalizados.",
-    },
-    {
-      id: "ENC-2025-003",
-      protocol: "PROT-8823",
-      clientId: 3,
-      client: "Academia FitPower",
-      type: "Camisa Manga Curta",
-      quantity: 50,
-      status: "Aguardando aprovação",
-      date: "2025-06-25",
-      budget: 3200.0,
-      description:
-        "Camisas dry fit com estampa da academia para instrutores. Cores: preta com detalhes laranja.",
-    },
-    {
-      id: "ENC-2025-004",
-      protocol: "PROT-8824",
-      clientId: 1,
-      client: "Rafael Mendonça",
-      type: "Shorts Esportivo",
-      quantity: 10,
-      status: "Em análise",
-      date: "2025-07-02",
-      budget: null,
-      description:
-        "Shorts esportivos para treinos de corrida. Tecido leve e respirável.",
-    },
-    {
-      id: "ENC-2025-005",
-      protocol: "PROT-8825",
-      clientId: 2,
-      client: "Clube Atlético BH",
-      type: "Jaqueta Corta Vento",
-      quantity: 30,
-      status: "Orçamento enviado",
-      date: "2025-06-20",
-      budget: 4500.0,
-      description: "Jaquetas corta vento para equipe, com logo bordado.",
-    },
-    {
-      id: "ENC-2025-006",
-      protocol: "PROT-8826",
-      clientId: 3,
-      client: "Academia FitPower",
-      type: "Legging Esportiva",
-      quantity: 25,
-      status: "Finalizado",
-      date: "2025-06-15",
-      budget: 1875.0,
-      description:
-        "Leggings femininas com compressão para treinos de alta intensidade.",
-    },
-    {
-      id: "ENC-2025-007",
-      protocol: "PROT-8827",
-      clientId: 1,
-      client: "Rafael Mendonça",
-      type: "Camisa Manga Longa",
-      quantity: 5,
-      status: "Em análise",
-      date: "2025-07-03",
-      budget: null,
-      description: "Camisas manga longa para corridas noturnas com refletivos.",
-    },
-  ];
-
-  // Usa as encomendas simuladas se não houver dados reais
-  const ordersToShow = customOrders.length > 0 ? customOrders : simulatedOrders;
+  const ordersToShow = customOrders.length > 0 ? customOrders : [];
 
   return (
     <div>
@@ -464,7 +386,6 @@ export default function ClientCustomOrders() {
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total", value: ordersToShow.length, color: "text-white" },
@@ -529,7 +450,6 @@ export default function ClientCustomOrders() {
         </div>
       )}
 
-      {/* New Order Modal */}
       <Modal
         isOpen={showForm}
         onClose={() => setShowForm(false)}
@@ -638,7 +558,6 @@ export default function ClientCustomOrders() {
               />
             </div>
 
-            {/* Upload area */}
             <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-[#D4AF37]/30 transition-colors cursor-pointer">
               <Upload size={24} className="text-slate-600 mx-auto mb-2" />
               <div className="text-sm text-slate-400 mb-1">

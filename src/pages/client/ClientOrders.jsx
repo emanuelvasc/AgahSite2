@@ -9,81 +9,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { StatusBadge, SearchInput, Card } from "../../components/ui";
-
-const myOrders = [
-  {
-    id: "PED-2025-001",
-    date: "10/01/2025",
-    status: "Entregue",
-    total: 289.7,
-    payment: "Pix",
-    items: [
-      {
-        name: "Camisa Manga Curta Performance",
-        qty: 2,
-        size: "G",
-        color: "Preto",
-        price: 89.9,
-      },
-      {
-        name: "Shorts Esportivo Pro",
-        qty: 1,
-        size: "G",
-        color: "Preto",
-        price: 79.9,
-      },
-    ],
-    tracking: "Entregue em 14/01/2025",
-  },
-  {
-    id: "PED-2025-005",
-    date: "16/01/2025",
-    status: "Enviado",
-    total: 199.8,
-    payment: "Pix",
-    items: [
-      {
-        name: "Regata Esportiva Elite",
-        qty: 2,
-        size: "M",
-        color: "Preto",
-        price: 69.9,
-      },
-      {
-        name: "Boné Performance Sport",
-        qty: 1,
-        size: "Único",
-        color: "Preto",
-        price: 49.9,
-      },
-    ],
-    tracking: "Saiu para entrega em 18/01/2025",
-  },
-  {
-    id: "PED-2024-089",
-    date: "28/11/2024",
-    status: "Entregue",
-    total: 457.5,
-    payment: "Cartão",
-    items: [
-      {
-        name: "Uniforme Esportivo Completo",
-        qty: 2,
-        size: "G",
-        color: "Personalizado",
-        price: 189.9,
-      },
-      {
-        name: "Legging Feminina Sport",
-        qty: 1,
-        size: "M",
-        color: "Preto",
-        price: 129.9,
-      },
-    ],
-    tracking: "Entregue em 05/12/2024",
-  },
-];
+import { useApp } from "../../context/AppContext";
 
 function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false);
@@ -98,12 +24,22 @@ function OrderCard({ order }) {
 
   const progress = statusProgress[order.status] || 0;
 
+  // Se tiver itens do pedido, usa eles, senão usa dados mockados
+  const orderItems = order.orderItems || [
+    {
+      name: order.client || "Produto",
+      qty: order.items || 1,
+      size: "G",
+      color: "Preto",
+      price: order.total / (order.items || 1),
+    },
+  ];
+
   return (
     <motion.div
       layout
       className="glass rounded-2xl overflow-hidden border border-white/6"
     >
-      {/* Header */}
       <button
         className="w-full flex items-center gap-4 p-5 hover:bg-white/3 transition-colors text-left"
         onClick={() => setExpanded(!expanded)}
@@ -121,18 +57,23 @@ function OrderCard({ order }) {
           <div className="text-xs text-slate-500 flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Calendar size={10} />
-              {order.date}
+              {order.date
+                ? new Date(order.date).toLocaleDateString("pt-BR")
+                : "Hoje"}
             </span>
             <span>
-              {order.items.length} item{order.items.length > 1 ? "s" : ""}
+              {order.items || order.orderItems?.length || 0} item
+              {(order.items || order.orderItems?.length || 0) > 1 ? "s" : ""}
             </span>
-            <span className="capitalize">{order.payment}</span>
+            <span className="capitalize">{order.payment || "Pix"}</span>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
           <div className="font-bold text-white">
             R${" "}
-            {order.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {(order.total || 0).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+            })}
           </div>
           <div className="mt-1 text-slate-600">
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -140,7 +81,6 @@ function OrderCard({ order }) {
         </div>
       </button>
 
-      {/* Progress bar */}
       <div className="px-5 pb-1">
         <div className="h-1 bg-white/5 rounded-full overflow-hidden">
           <div
@@ -156,29 +96,28 @@ function OrderCard({ order }) {
         </div>
       </div>
 
-      {/* Expanded details */}
       <motion.div
         initial={false}
         animate={{ height: expanded ? "auto" : 0, opacity: expanded ? 1 : 0 }}
         style={{ overflow: "hidden" }}
       >
         <div className="px-5 pb-5 pt-3 space-y-4 border-t border-white/6 mt-3">
-          {/* Tracking */}
           <div className="flex items-start gap-2 p-3 rounded-xl bg-emerald-500/8 border border-emerald-500/15">
             <MapPin
               size={14}
               className="text-emerald-400 flex-shrink-0 mt-0.5"
             />
-            <span className="text-xs text-emerald-300">{order.tracking}</span>
+            <span className="text-xs text-emerald-300">
+              {order.tracking || "Pedido em processamento"}
+            </span>
           </div>
 
-          {/* Items */}
           <div>
             <div className="text-xs text-slate-500 uppercase tracking-wider mb-3">
               Itens do Pedido
             </div>
             <div className="space-y-2">
-              {order.items.map((item, i) => (
+              {orderItems.map((item, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 p-3 glass-light rounded-xl"
@@ -196,23 +135,26 @@ function OrderCard({ order }) {
                       {item.name}
                     </div>
                     <div className="text-xs text-slate-500">
-                      Tam: {item.size} • Cor: {item.color} • Qtd: {item.qty}
+                      Tam: {item.size || "G"} • Cor: {item.color || "Preto"} •
+                      Qtd: {item.qty || 1}
                     </div>
                   </div>
                   <div className="text-sm font-semibold text-white flex-shrink-0">
-                    R$ {(item.price * item.qty).toFixed(2).replace(".", ",")}
+                    R${" "}
+                    {((item.price || 0) * (item.qty || 1))
+                      .toFixed(2)
+                      .replace(".", ",")}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Summary */}
           <div className="flex justify-between items-center text-sm pt-2 border-t border-white/6">
             <span className="text-slate-400">Total do Pedido</span>
             <span className="font-bold text-white text-base">
               R${" "}
-              {order.total.toLocaleString("pt-BR", {
+              {(order.total || 0).toLocaleString("pt-BR", {
                 minimumFractionDigits: 2,
               })}
             </span>
@@ -224,10 +166,11 @@ function OrderCard({ order }) {
 }
 
 export default function ClientOrders() {
+  const { orders } = useApp();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("Todos");
 
-  const filtered = myOrders.filter((o) => {
+  const filtered = orders.filter((o) => {
     const matchSearch = o.id.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "Todos" || o.status === filter;
     return matchSearch && matchFilter;
@@ -240,26 +183,27 @@ export default function ClientOrders() {
           Meus Pedidos
         </h1>
         <p className="text-slate-500 text-sm mt-1">
-          {myOrders.length} pedidos realizados
+          {orders.length} pedidos realizados
         </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
           {
             label: "Total de Pedidos",
-            value: myOrders.length,
+            value: orders.length,
             color: "text-white",
           },
           {
             label: "Em Andamento",
-            value: myOrders.filter((o) => o.status === "Enviado").length,
+            value: orders.filter(
+              (o) => o.status === "Enviado" || o.status === "Em Produção",
+            ).length,
             color: "text-blue-400",
           },
           {
             label: "Entregues",
-            value: myOrders.filter((o) => o.status === "Entregue").length,
+            value: orders.filter((o) => o.status === "Entregue").length,
             color: "text-emerald-400",
           },
         ].map((s) => (
@@ -279,15 +223,17 @@ export default function ClientOrders() {
           placeholder="Buscar pedido..."
           className="flex-1 max-w-xs"
         />
-        {["Todos", "Enviado", "Em Produção", "Entregue"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filter === f ? "gradient-brand text-white" : "glass-light text-slate-400 border border-white/8"}`}
-          >
-            {f}
-          </button>
-        ))}
+        {["Todos", "Enviado", "Em Produção", "Entregue", "Pendente"].map(
+          (f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filter === f ? "gradient-brand text-white" : "glass-light text-slate-400 border border-white/8"}`}
+            >
+              {f}
+            </button>
+          ),
+        )}
       </div>
 
       <div className="space-y-3">

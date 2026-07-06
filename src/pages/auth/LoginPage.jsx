@@ -7,7 +7,6 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  Zap,
   UserPlus,
   Trophy,
   Shirt,
@@ -43,17 +42,6 @@ export default function LoginPage() {
       setLoading(false);
       setError("Erro ao fazer login. Tente novamente.");
     }
-  };
-
-  const fillDemo = (role) => {
-    if (role === "admin") {
-      setEmail("admin@agah.com");
-      setPassword("admin123");
-    } else {
-      setEmail("cliente@agah.com");
-      setPassword("cliente123");
-    }
-    setError("");
   };
 
   return (
@@ -242,37 +230,6 @@ export default function LoginPage() {
                 Criar conta
               </Link>
             </p>
-          </div>
-
-          <div className="mt-6 p-4 rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/5">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap size={14} className="text-[#D4AF37]" />
-              <span className="text-xs font-semibold text-[#D4AF37] uppercase tracking-wider">
-                Acesso Demo
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => fillDemo("admin")}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/8 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/8 transition-all text-left"
-              >
-                <div className="text-xs font-semibold text-white mb-1">
-                  Administrador
-                </div>
-                <div className="text-[11px] text-slate-500">admin@agah.com</div>
-              </button>
-              <button
-                onClick={() => fillDemo("client")}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/8 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/8 transition-all text-left"
-              >
-                <div className="text-xs font-semibold text-white mb-1">
-                  Cliente
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  cliente@agah.com
-                </div>
-              </button>
-            </div>
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-600">
