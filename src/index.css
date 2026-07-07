@@ -134,3 +134,62 @@ select:focus {
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
+
+/* 📱 RESPONSIVIDADE PARA MOBILE */
+
+/* Menu hambúrguer visível em mobile */
+@media (max-width: 767px) {
+  .sidebar-mobile {
+    display: block;
+  }
+}
+
+/* Ajustes para telas pequenas */
+@media (max-width: 640px) {
+  /* Padding reduzido */
+  .p-6 {
+    padding: 16px !important;
+  }
+  .p-8 {
+    padding: 16px !important;
+  }
+  .gap-6 {
+    gap: 12px !important;
+  }
+
+  /* Grids com menos colunas */
+  .grid-cols-2 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .grid-cols-3 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .grid-cols-4 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Textos menores */
+  .text-2xl {
+    font-size: 18px !important;
+  }
+  .text-xl {
+    font-size: 16px !important;
+  }
+  .text-lg {
+    font-size: 15px !important;
+  }
+
+  /* Inputs maiores para toque */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Botões com área de toque maior */
+  button,
+  .btn,
+  .button {
+    min-height: 44px !important;
+  }
+}
