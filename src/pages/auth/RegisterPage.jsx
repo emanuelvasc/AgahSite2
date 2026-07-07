@@ -76,13 +76,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Registrar no Supabase
       const result = await register(form.email, form.password, form.name);
       setLoading(false);
 
       if (result.success) {
         setRegistered(true);
-        // Auto-login após registro
         setTimeout(async () => {
           const loginResult = await login(form.email, form.password);
           if (loginResult.success) {
@@ -92,23 +90,44 @@ export default function RegisterPage() {
           }
         }, 2000);
       } else {
-        setError(result.error || "Erro ao criar conta. Tente novamente.");
+        // ✅ Não exibe erro para "usuário já existe" - apenas redireciona
+        if (
+          result.error?.includes("já cadastrado") ||
+          result.error?.includes("already registered")
+        ) {
+          setRegistered(true);
+          setTimeout(async () => {
+            const loginResult = await login(form.email, form.password);
+            if (loginResult.success) {
+              navigate(loginResult.role === "admin" ? "/admin" : "/cliente");
+            } else {
+              navigate("/login");
+            }
+          }, 2000);
+        } else {
+          setError(result.error || "Erro ao criar conta. Tente novamente.");
+        }
       }
     } catch (error) {
       setLoading(false);
-      setError("Erro ao criar conta. Tente novamente.");
+      // ✅ Se o erro for de usuário já existente, não mostra aviso
+      if (
+        error.message?.includes("already registered") ||
+        error.message?.includes("já cadastrado")
+      ) {
+        setRegistered(true);
+        setTimeout(async () => {
+          const loginResult = await login(form.email, form.password);
+          if (loginResult.success) {
+            navigate(loginResult.role === "admin" ? "/admin" : "/cliente");
+          } else {
+            navigate("/login");
+          }
+        }, 2000);
+      } else {
+        setError("Erro ao criar conta. Tente novamente.");
+      }
     }
-  };
-
-  const fillDemo = () => {
-    setForm({
-      name: "Cliente Demo",
-      email: "cliente@agah.com",
-      phone: "(31) 99999-9999",
-      password: "cliente123",
-      confirmPassword: "cliente123",
-    });
-    setError("");
   };
 
   if (registered) {
@@ -398,15 +417,6 @@ export default function RegisterPage() {
                 Faça login
               </Link>
             </p>
-          </div>
-
-          <div className="mt-6 p-4 rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/5">
-            <button
-              onClick={fillDemo}
-              className="w-full text-center text-xs text-[#D4AF37] hover:text-[#e8c970] transition-colors font-medium"
-            >
-              ⚡ Preencher com dados demo
-            </button>
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-600">
