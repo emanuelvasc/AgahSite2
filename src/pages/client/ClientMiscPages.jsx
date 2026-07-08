@@ -892,7 +892,7 @@ export function ClientContact() {
           {[
             { icon: Mail, label: "E-mail", value: "contato@agah.com.br" },
             { icon: Phone, label: "Telefone", value: "(31) 99999-0000" },
-            { icon: MapPin, label: "Endereço", value: "Contagem, MG — Brasil" },
+            { icon: MapPin, label: "Endereço", value: "Rua José Máximo Ribeiro, 922 - Loja A, João XXIII, Muriaé - MG" },
           ].map((item) => (
             <Card key={item.label} className="py-4">
               <div className="flex items-center gap-3">
@@ -917,6 +917,33 @@ export function ClientContact() {
               Seg a Sex, 8h–18h
             </div>
             <div className="text-xs text-slate-600 mt-1">Sábados: 8h–12h</div>
+          </Card>
+
+          {/* 🗺️ MAPA DA AGAH */}
+          <Card className="p-0 overflow-hidden border border-white/10">
+            <div className="relative w-full" style={{ paddingBottom: "75%" }}>
+              <iframe
+                src="AQUI VOCÊ COLA O LINK REAL DO GOOGLE MAPS"
+                className="absolute inset-0 w-full h-full border-0"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Mapa AGAH - Muriaé/MG"
+              />
+            </div>
+            <div className="p-3 text-center border-t border-white/6">
+              <p className="text-xs text-slate-500">
+                📍 Rua José Máximo Ribeiro, 922 - Loja A, João XXIII, Muriaé - MG
+              </p>
+              <a
+                href="https://www.google.com/maps/dir//Rua+José+Máximo+Ribeiro,+922+-+Loja+A,+João+XXIII,+Muriaé+-+MG"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#D4AF37] hover:underline mt-1 inline-block"
+              >
+                Abrir no Google Maps →
+              </a>
+            </div>
           </Card>
         </div>
 
