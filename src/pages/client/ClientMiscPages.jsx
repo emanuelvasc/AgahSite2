@@ -857,9 +857,8 @@ export function ClientAbout() {
       </div>
     </div>
   );
-}
 
-// ─── CONTACT ──────────────────────────────────────────────
+}// ─── CONTACT ──────────────────────────────────────────────
 export function ClientContact() {
   const [form, setForm] = useState({
     name: "",
@@ -1010,7 +1009,7 @@ export function ClientContact() {
         </div>
       </div>
 
-      {/* 🗺️ MAPA DA AGAH - LARGURA TOTAL */}
+      {/* 🗺️ MAPA DA AGAH - LARGURA TOTAL COM ALTURA REDUZIDA */}
       <Card className="p-0 overflow-hidden border border-white/10">
         <div className="p-3 border-b border-white/6">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2">
@@ -1018,7 +1017,7 @@ export function ClientContact() {
             Nossa Localização
           </h3>
         </div>
-        <div className="relative w-full" style={{ paddingBottom: "40%" }}>
+        <div className="relative w-full" style={{ paddingBottom: "25%" }}>
           <iframe
             src="https://www.google.com/maps?q=Rua+José+Máximo+Ribeiro,+922,+Muriaé,+MG&output=embed"
             className="absolute inset-0 w-full h-full border-0"
@@ -1045,3 +1044,4 @@ export function ClientContact() {
     </div>
   );
 }
+
