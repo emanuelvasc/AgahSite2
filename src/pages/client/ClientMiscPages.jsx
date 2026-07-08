@@ -921,9 +921,15 @@ export function ClientContact() {
 
           {/* 🗺️ MAPA DA AGAH */}
           <Card className="p-0 overflow-hidden border border-white/10">
+            <div className="p-3 border-b border-white/6">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <MapPin size={16} className="text-[#D4AF37]" />
+                Nossa Localização
+              </h3>
+            </div>
             <div className="relative w-full" style={{ paddingBottom: "75%" }}>
               <iframe
-                src="AQUI VOCÊ COLA O LINK REAL DO GOOGLE MAPS"
+                src="https://www.google.com/maps?q=Rua+José+Máximo+Ribeiro,+922,+Muriaé,+MG&output=embed"
                 className="absolute inset-0 w-full h-full border-0"
                 allowFullScreen
                 loading="lazy"
